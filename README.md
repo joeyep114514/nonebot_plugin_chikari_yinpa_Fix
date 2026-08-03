@@ -1,4 +1,4 @@
-感谢github@[https://github.com/mrqx0195](墨染琴弦)制作该插件。  
+感谢github@[墨染琴弦](https://github.com/mrqx0195)制作该插件。  
 由于一些原因，原插件在加入时报错，本插件使用GPT5-Mini修复。
 ---
 <div align="center">
