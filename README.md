@@ -1,3 +1,6 @@
+感谢github@[https://github.com/mrqx0195](墨染琴弦)制作该插件。  
+由于一些原因，原插件在加入时报错，本插件使用GPT5-Mini修复。
+---
 <div align="center">
   <a href="https://v2.nonebot.dev/store"><img src="https://github.com/A-kirami/nonebot-plugin-template/blob/resources/nbp_logo.png" width="180" height="180" alt="NoneBotPluginLogo"></a>
   <br>
