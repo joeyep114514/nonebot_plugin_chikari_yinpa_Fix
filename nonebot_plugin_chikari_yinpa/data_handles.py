@@ -4,25 +4,34 @@ import os
 from pathlib import Path
 from time import time
 from .dicts import dicts
-try:
-    import nonebot_plugin_localstore as store
-except ImportError:
-    class _FallbackStore:
-        @staticmethod
-        def get_data_file(name, filename):
-            base = Path(__file__).resolve().parent / "data"
-            base.mkdir(parents=True, exist_ok=True)
-            return base / filename
 
-        @staticmethod
-        def get_config_file(name, filename):
-            base = Path(__file__).resolve().parent / "data"
-            base.mkdir(parents=True, exist_ok=True)
-            return base / filename
-    store = _FallbackStore()
+_store = None
 
-plugin_data_file: Path = store.get_data_file("chikari_yinpa", "data.json")
-plugin_config_file: Path = store.get_config_file("chikari_yinpa", "config.json")
+
+def _get_store():
+    global _store
+    if _store is None:
+        try:
+            import nonebot_plugin_localstore as store
+        except ImportError:
+            class _FallbackStore:
+                @staticmethod
+                def get_data_file(name, filename):
+                    base = Path(__file__).resolve().parent / "data"
+                    base.mkdir(parents=True, exist_ok=True)
+                    return base / filename
+
+                @staticmethod
+                def get_config_file(name, filename):
+                    base = Path(__file__).resolve().parent / "data"
+                    base.mkdir(parents=True, exist_ok=True)
+                    return base / filename
+            store = _FallbackStore()
+        _store = store
+    return _store
+
+plugin_data_file: Path = _get_store().get_data_file("chikari_yinpa", "data.json")
+plugin_config_file: Path = _get_store().get_config_file("chikari_yinpa", "config.json")
 plugin_data_file.parent.mkdir(parents=True, exist_ok=True)
 plugin_config_file.parent.mkdir(parents=True, exist_ok=True)
 

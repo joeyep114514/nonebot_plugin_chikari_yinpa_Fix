@@ -176,3 +176,6 @@ pyrightconfig.json
 !.vscode/*.code-snippets
 setup.bat
 .gitignore
+pyproject.toml
+setup.cfg
+setup.py
