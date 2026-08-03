@@ -1,7 +1,6 @@
-from nonebot import require,on_command
+from nonebot import on_command
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.permission import SUPERUSER
-require("nonebot_plugin_localstore")
 
 from nonebot.plugin import PluginMetadata
 

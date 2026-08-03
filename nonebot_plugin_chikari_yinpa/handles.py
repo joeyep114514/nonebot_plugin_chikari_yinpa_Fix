@@ -1,7 +1,7 @@
 from nonebot.adapters.onebot.v11 import GroupMessageEvent,Message,MessageSegment
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg
-from nonebot import get_driver,get_plugin_config,get_bots
+from nonebot import get_plugin_config,get_bots
 from time import time
 from hashlib import md5
 from math import sqrt
@@ -9,9 +9,15 @@ from math import sqrt
 from .data_handles import data,configdata,DHandles
 from .config import Config
 from .utils import Utils
-from .dicts import dicts
 
-plugin_config = get_plugin_config(Config)
+
+def _get_plugin_config():
+    try:
+        return get_plugin_config(Config)
+    except Exception:
+        return Config()
+
+from .dicts import dicts
 
 class yinpa_Handles():
     """消息处理
@@ -70,21 +76,24 @@ class yinpa_Handles():
         uid: str = event.get_user_id()
         command: str = args.extract_plain_text()
         arg_list: list = command.split()
-        if not len(arg_list) == 2:
+        if len(arg_list) >= 1:
+            name: str = arg_list[0]
+        else:
             bot = get_bots()[(str)(event.self_id)]
             name: str = (await bot.call_api("get_group_member_info",group_id = event.group_id,user_id = uid))["nickname"]
-        else:
-            name: str = arg_list[0]
-        if (int)(arg_list[1]) <= 0:
-            species: int = Utils.dice(7,event.get_user_id())
-        else:
+        if len(arg_list) >= 2:
             if not arg_list[1].isdigit():
                 await matcher.finish("参数错误！\n种族应为一个正整数（种族编号）\n种族列表参照： /yinpa_help 种族 ")
-            species: int = (int)(arg_list[1])
+            species: int = int(arg_list[1])
+            if species <= 0:
+                species = Utils.dice(7,event.get_user_id())
+        else:
+            species: int = Utils.dice(7,event.get_user_id())
         if not dicts.species_dict.get(species):
             await matcher.finish("参数错误！\n不存在指定的种族\n种族列表参照： /yinpa_help 种族 ")
         if Utils.find_user_name(name):
             await matcher.finish("已经有人使用这个昵称了！")
+        plugin_config = _get_plugin_config()
         DHandles.user_add(uid,{
             'name':name,
             'species':species,

@@ -1,4 +1,4 @@
-from nonebot.adapters.onebot.v11 import GroupMessageEvent,bot
+from nonebot.adapters.onebot.v11 import GroupMessageEvent
 from nonebot import get_plugin_config,get_bots
 
 import json
@@ -12,7 +12,12 @@ from .data_handles import data,configdata,DHandles
 from .dicts import dicts
 from .config import Config
 
-plugin_config = get_plugin_config(Config)
+
+def _get_plugin_config():
+    try:
+        return get_plugin_config(Config)
+    except Exception:
+        return Config()
 
 class Utils:
     def group_enable_check(groupid: int):
@@ -63,8 +68,11 @@ class Utils:
             int: 值
         """
         
-        seed((int)(time()) ^ (int)(d) ^ (int)(_seed))
-        return randint(1,(int)(d))
+        d = int(d)
+        if d <= 0:
+            return 0
+        seed((int)(time()) ^ d ^ (int)(_seed))
+        return randint(1, d)
     
     def get_at(event: GroupMessageEvent):
         """获取消息中的at
@@ -122,7 +130,7 @@ class Utils:
             max_len = max(len(str),max_len)
         image = Image.new("RGB", ((fontSize * max_len), len(liens) * (fontSize + 5)), (255, 255, 255))
         draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype(plugin_config.chikari_yinpa_font, fontSize)
+        font = ImageFont.truetype(_get_plugin_config().chikari_yinpa_font, fontSize)
         draw.text((0, 0), text, font=font, fill="#000000", stroke_width = 0)
         img = image.convert("RGB")
         img_byte = BytesIO()
@@ -340,14 +348,14 @@ class Utils:
         elif key == 'technique':
             value = data[uid]['technique']
             value += Utils.vampire(uid)
-            if i := Utils.get_skill(uid,12) and Utils.is_night():
+            if (i := Utils.get_skill(uid,12)) and Utils.is_night():
                 value += -20 * i[2]
         elif key == 'volition':
             value = data[uid]['volition']
             if i := Utils.boat(uid):
                 value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
             value += Utils.vampire(uid)
-            if i := Utils.get_skill(uid,12) and Utils.is_night():
+            if (i := Utils.get_skill(uid,12)) and Utils.is_night():
                 value += -20 * i[2]
         elif key == 'intelligence':
             value = data[uid]['intelligence']

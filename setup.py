@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mrqx0195/nonebot_plugin_chikari_yinpa",
     packages=setuptools.find_packages(),
-    install_requires=['pillow', 'nonebot2>=2.2.0','nonebot-adapter-onebot','nonebot-plugin-localstore'],
+    install_requires=['pillow', 'nonebot2>=2.2.0','nonebot-adapter-onebot'],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
