@@ -289,7 +289,7 @@ class Utils:
         
         b = 0
         s = Utils.get_skill(uid,6)
-        if s and s[1] and s[1] <= time():
+        if s and (not s[1] or s[1] <= time()):
             b = s[2]
         return b
 
