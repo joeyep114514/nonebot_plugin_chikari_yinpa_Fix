@@ -224,24 +224,25 @@ class Utils:
         DHandles.data_set(uid,"last_refresh_time",time())
         return
 
-    def get_skill(uid: str,id: int):
+    def get_skill(uid: str,id: int,check_stun: bool = True):
         """获取技能
 
         Args:
             uid (str): 用户id
             id (int): 技能id
+            check_stun (bool): 是否检查失神状态。为False时，即使处于失神状态也会返回技能。
 
         Returns:
             list: [技能id,附加数据,等级]
         """
-        
+
         s = []
         for i in data[uid]["skill"]:
             if i[0] == id:
                 s = i
             if len(i) <= 2:
                 DHandles.skill_refresh(uid,i[0],i[1])
-        if s and s[0] not in [9,10,11,12,13,14,15,] and Utils.get_state(uid,1):
+        if check_stun and s and s[0] not in [9,10,11,12,13,14,15,] and Utils.get_state(uid,1):
             s = []
         return s
 
@@ -277,19 +278,20 @@ class Utils:
             b = False
         return b
 
-    def boat(uid: str):
+    def boat(uid: str,check_stun: bool = True):
         """判断舰装是否生效
 
         Args:
             uid (str): 用户id
+            check_stun (bool): 是否检查失神状态。为False时，即使处于失神状态也会返回舰装等级。
 
         Returns:
             int: 舰装等级
         """
-        
+
         b = 0
-        s = Utils.get_skill(uid,6)
-        if s and s[1] and s[1] <= time():
+        s = Utils.get_skill(uid,6,check_stun=check_stun)
+        if s and (not s[1] or s[1] <= time()):
             b = s[2]
         return b
 
@@ -338,13 +340,15 @@ class Utils:
         elif key == 'strength':
             value = data[uid]['strength']
             if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
+                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
+            value = int(value)
         elif key == 'constitution':
             value = data[uid]['constitution']
             if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
+                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
+            value = int(value)
         elif key == 'technique':
             value = data[uid]['technique']
             value += Utils.vampire(uid)
@@ -353,7 +357,7 @@ class Utils:
         elif key == 'volition':
             value = data[uid]['volition']
             if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
+                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
             if (i := Utils.get_skill(uid,12)) and Utils.is_night():
                 value += -20 * i[2]
@@ -363,6 +367,8 @@ class Utils:
             value = data[uid]['charm']
         if value < 0:
             value = 0
+        if key not in ('penis_length', 'vagina_depth'):
+            value = int(value)
         return [value,b]
 
     def get_attack_list(uid: str,target: str):
@@ -444,7 +450,7 @@ class Utils:
                     d = Utils.dice(10,(int)(uid) ^ 14)
                     DHandles.state_refresh(uid,2,time() + d * 3600)
                     str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d10 = {d}小时。（期间无法行动，无法被透，技能失效。）"
-                    if Utils.boat(uid):
+                    if Utils.boat(uid,check_stun=False):
                         DHandles.skill_refresh(uid,6,time() + 259200)
                         str += f"\n{data[uid]['name']}的舰装破损了！将进入三天的冷却。"
                 else:

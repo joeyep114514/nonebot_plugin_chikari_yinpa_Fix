@@ -4,47 +4,81 @@ import os
 from pathlib import Path
 from time import time
 from .dicts import dicts
-try:
-    import nonebot_plugin_localstore as store
-except ImportError:
-    class _FallbackStore:
-        @staticmethod
-        def get_data_file(name, filename):
-            base = Path(__file__).resolve().parent / "data"
-            base.mkdir(parents=True, exist_ok=True)
-            return base / filename
 
-        @staticmethod
-        def get_config_file(name, filename):
-            base = Path(__file__).resolve().parent / "data"
-            base.mkdir(parents=True, exist_ok=True)
-            return base / filename
-    store = _FallbackStore()
+_store = None
+_plugin_data_file = None
+_plugin_config_file = None
 
-plugin_data_file: Path = store.get_data_file("chikari_yinpa", "data.json")
-plugin_config_file: Path = store.get_config_file("chikari_yinpa", "config.json")
-plugin_data_file.parent.mkdir(parents=True, exist_ok=True)
-plugin_config_file.parent.mkdir(parents=True, exist_ok=True)
 
-#用户数据文件初始化及载入
+def _get_store():
+    global _store
+    if _store is None:
+        try:
+            import nonebot_plugin_localstore as store
+        except ImportError:
+            class _FallbackStore:
+                @staticmethod
+                def get_data_file(name, filename):
+                    base = Path(__file__).resolve().parent / "data"
+                    base.mkdir(parents=True, exist_ok=True)
+                    return base / filename
 
-if not plugin_data_file.exists() or plugin_data_file.stat().st_size == 0:
-    init_data = {}
-    plugin_data_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
-    data = init_data
-else:
-    data = json.loads(plugin_data_file.read_text(encoding='utf-8'), strict=False)
+                @staticmethod
+                def get_config_file(name, filename):
+                    base = Path(__file__).resolve().parent / "data"
+                    base.mkdir(parents=True, exist_ok=True)
+                    return base / filename
+            store = _FallbackStore()
+        _store = store
+    return _store
 
-#配置数据文件初始化及载入
 
-if not plugin_config_file.exists() or plugin_config_file.stat().st_size == 0:
-    init_data = {
-        "yinpa_enabled_group":[],
-    }
-    plugin_config_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
-    configdata = init_data
-else:
-    configdata = json.loads(plugin_config_file.read_text(encoding='utf-8'), strict=False)
+def _get_plugin_data_file():
+    global _plugin_data_file
+    if _plugin_data_file is None:
+        _plugin_data_file = _get_store().get_data_file("chikari_yinpa", "data.json")
+        _plugin_data_file.parent.mkdir(parents=True, exist_ok=True)
+    return _plugin_data_file
+
+
+def _get_plugin_config_file():
+    global _plugin_config_file
+    if _plugin_config_file is None:
+        _plugin_config_file = _get_store().get_config_file("chikari_yinpa", "config.json")
+        _plugin_config_file.parent.mkdir(parents=True, exist_ok=True)
+    return _plugin_config_file
+
+
+data = {}
+configdata = {}
+_data_loaded = False
+
+
+def _ensure_data_loaded():
+    global data, configdata, _data_loaded
+    if _data_loaded:
+        return
+
+    plugin_data_file = _get_plugin_data_file()
+    plugin_config_file = _get_plugin_config_file()
+
+    if not plugin_data_file.exists() or plugin_data_file.stat().st_size == 0:
+        init_data = {}
+        plugin_data_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
+        data = init_data
+    else:
+        data = json.loads(plugin_data_file.read_text(encoding='utf-8'), strict=False)
+
+    if not plugin_config_file.exists() or plugin_config_file.stat().st_size == 0:
+        init_data = {
+            "yinpa_enabled_group": [],
+        }
+        plugin_config_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
+        configdata = init_data
+    else:
+        configdata = json.loads(plugin_config_file.read_text(encoding='utf-8'), strict=False)
+
+    _data_loaded = True
 
 
 class DHandles():
@@ -56,6 +90,8 @@ class DHandles():
         
         global data
         global configdata
+        plugin_data_file = _get_plugin_data_file()
+        plugin_config_file = _get_plugin_config_file()
         f = open(plugin_data_file,'w')
         json.dump(data,f,indent=4)
         f.close
