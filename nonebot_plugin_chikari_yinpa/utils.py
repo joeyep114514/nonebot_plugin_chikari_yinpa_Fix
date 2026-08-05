@@ -338,12 +338,12 @@ class Utils:
         elif key == 'strength':
             value = data[uid]['strength']
             if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
+                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
         elif key == 'constitution':
             value = data[uid]['constitution']
             if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
+                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
         elif key == 'technique':
             value = data[uid]['technique']
@@ -353,7 +353,7 @@ class Utils:
         elif key == 'volition':
             value = data[uid]['volition']
             if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
+                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
             if (i := Utils.get_skill(uid,12)) and Utils.is_night():
                 value += -20 * i[2]

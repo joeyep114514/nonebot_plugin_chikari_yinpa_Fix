@@ -17,7 +17,7 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={"~onebot.v11"}
 )
 
-__version__ = "1.4.3"
+__version__ = "1.4.6"
 
 on_yinpa_control = on_command(
     "yinpa_control",
