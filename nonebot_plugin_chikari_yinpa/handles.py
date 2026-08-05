@@ -705,14 +705,20 @@ class yinpa_Handles():
                         i = 'penis_length'
                     elif i == 8:
                         i = 'vagina_depth'
+                    if i in ('strength','constitution','technique','volition','intelligence','charm'):
+                        d = int(d)
                     str += f"你的{dicts.attribute_dict[i]}： {data[uid][i]} → {data[uid][i] + d}\n"
-                    DHandles.data_set(uid,i,(data[uid][i] + d))
+                    if i in ('strength','constitution','technique','volition','intelligence','charm'):
+                        DHandles.data_set(uid,i,int(data[uid][i] + d))
+                    else:
+                        DHandles.data_set(uid,i,(data[uid][i] + d))
                 elif d >= 8 and d <= 10:
                     l = [10,11,12,13,14,15,]
                     i = Utils.dice(len(l),(int)(uid) ^ 106)
                     d = Utils.dice(86400,(int)(uid) ^ 107)
                     str += DHandles.skill_refresh(uid,l[i - 1],level = 1,mode = 'add')
         DHandles.data_set(uid,"next_work_time",(time() + 3600))
+        money = int(money)
         DHandles.data_set(uid,"money",data[uid]["money"] + money)
         str += "一小时内你将无法继续工作"
         await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
