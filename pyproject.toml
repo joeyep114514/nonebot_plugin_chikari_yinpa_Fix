@@ -1,0 +1,41 @@
+[project]
+name = "nonebot-plugin-chikari-yinpa-fix"
+version = "1.4.10"
+description = "Fixed something by AI"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    {name = "fjcdhc", email = "joeyep114514@outlook.com"}
+]
+dependencies = [
+    "Pillow",
+    "nonebot2>=2.0.0",
+    "nonebot-adapter-onebot",
+    "nonebot-plugin-localstore",
+]
+keywords = ["nonebot", "plugin", "chikari", "yinpa"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix"
+Source = "https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix"
+"Bug Tracker" = "https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix/issues"
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["nonebot_plugin_chikari_yinpa*"]
+
+[tool.setuptools.package-data]
+"nonebot_plugin_chikari_yinpa" = ["data/*.json", "resource/*.ttf"]
