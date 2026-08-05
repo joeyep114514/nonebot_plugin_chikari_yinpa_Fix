@@ -5,8 +5,8 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setuptools.setup(
     name="nonebot-plugin-chikari-yinpa-fix",
-    version="1.4.3",
-    author="fjcdhc",
+    version="1.4.6",
+    author="joeyep114514",
     author_email="joeyep114514@outlook.com",
     description="Fixed something by AI",
     long_description=long_description,
