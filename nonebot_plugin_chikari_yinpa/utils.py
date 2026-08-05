@@ -340,11 +340,13 @@ class Utils:
             if i := Utils.boat(uid):
                 value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
+            value = int(value)
         elif key == 'constitution':
             value = data[uid]['constitution']
             if i := Utils.boat(uid):
                 value += Utils.get_value(uid,'intelligence')[0] * sqrt(i)
             value += Utils.vampire(uid)
+            value = int(value)
         elif key == 'technique':
             value = data[uid]['technique']
             value += Utils.vampire(uid)
@@ -363,6 +365,8 @@ class Utils:
             value = data[uid]['charm']
         if value < 0:
             value = 0
+        if key not in ('penis_length', 'vagina_depth'):
+            value = int(value)
         return [value,b]
 
     def get_attack_list(uid: str,target: str):
