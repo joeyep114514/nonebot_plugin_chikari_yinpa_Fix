@@ -116,6 +116,14 @@ on_yinpa_work = on_command(
     handlers=[yinpa_Handles.yinpa_work]
 )
 
+on_yinpa_transfer = on_command(
+    "transfer",
+    aliases={"转账"},
+    priority=10,
+    block=False,
+    handlers=[yinpa_Handles.yinpa_transfer]
+)
+
 # on_test = on_command(
 #     "test",
 #     permission=SUPERUSER | GROUP_ADMIN | GROUP_OWNER,

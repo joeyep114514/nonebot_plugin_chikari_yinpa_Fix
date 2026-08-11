@@ -4,7 +4,7 @@ class dicts():
     """
     
     yinpa_help_dict = {
-        "":"Chikari_yinpa 模块帮助\n加入银趴：/yinpa_join <银趴昵称> <银趴种族>\n种族列表：/yinpa_help 种族\n技能列表：/yinpa_help 技能\n状态列表：/yinpa_help 状态\n查询个人信息：/info\n签到：/sign_in\n商店：/shop\n工作：/work",
+        "":"Chikari_yinpa 模块帮助\n加入银趴：/yinpa_join <银趴昵称> <银趴种族>\n种族列表：/yinpa_help 种族\n技能列表：/yinpa_help 技能\n状态列表：/yinpa_help 状态\n查询个人信息：/info\n签到：/sign_in\n商店：/shop\n工作：/work\n转账：/transfer",
         "help":"help\n命令：/help [参数]\n命令别称：/银趴帮助\n查询Chikari_yinpa的帮助",
         "sign_in":"sign_in\n命令：/sign_in\n命令别称：/签到 /打卡\n每日打卡，每天可使用一次，增加长度、深度、金钱",
         "yinpa_join":"join_yinpa\n命令：/yinpa_join [银趴昵称] [银趴种族]\n命令别称：/加入银趴\n加入银趴！\n种族列表参照： /yinpa_help 种族\n昵称留空则直接使用群昵称\n种族留空则为随机种族",
@@ -17,6 +17,7 @@ class dicts():
         "kou":"kou\n命令：/kou\n命令别称：/扣 /扣扣 /自慰 /紫薇\n扣一次，能够增加少量深度",
         "shop":"shop\n命令：/shop\n命令别称：/商店 /买 /买东西 /店\n花费金钱购买商品\n参见：/yinpa_help shop",
         "work":"work\n命令：/work\n命令别称：/工作 /打工\n工作，获得金钱及其他东西\n参见：/yinpa_help work",
+        "transfer":"transfer\n命令：/transfer <金额> <@某人 或 银趴昵称>\n命令别称：/转账\n将金钱转给某人，例如：/转账 1000 @xxx",
     }
     """帮助表
     """
@@ -53,6 +54,7 @@ class dicts():
         "店":"shop",
         "工作":"work",
         "打工":"work",
+        "转账":"transfer",
     }
     """帮助别称
     """

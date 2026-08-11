@@ -222,6 +222,8 @@ class yinpa_Handles():
         """处理查询信息
         """
         
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
         at:list = Utils.get_at(event)
         if not at:
             arg_list = (args.extract_plain_text()).split()
@@ -253,6 +255,8 @@ class yinpa_Handles():
         """处理透人
         """
         
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
         at:list = Utils.get_at(event)
         if not at:
             arg_list = (args.extract_plain_text()).split()
@@ -383,6 +387,8 @@ class yinpa_Handles():
         """处理榨人
         """
         
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
         at:list = Utils.get_at(event)
         if not at:
             arg_list = (args.extract_plain_text()).split()
@@ -513,6 +519,8 @@ class yinpa_Handles():
         """处理冲
         """
         
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
         uid: str = event.get_user_id()
         if not Utils.yinpa_user_presence_check(event.get_user_id()):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
@@ -534,6 +542,8 @@ class yinpa_Handles():
         """处理扣
         """
         
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
         uid: str = event.get_user_id()
         if not Utils.yinpa_user_presence_check(event.get_user_id()):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
@@ -555,6 +565,8 @@ class yinpa_Handles():
         """处理商店
         """
         
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
         uid = event.get_user_id()
         command = args.extract_plain_text()
         shop_key = command.split()
@@ -591,6 +603,8 @@ class yinpa_Handles():
         """处理工作
         """
         
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
         uid = event.get_user_id()
         if not Utils.yinpa_user_presence_check(event.get_user_id()):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
@@ -716,6 +730,51 @@ class yinpa_Handles():
         DHandles.data_set(uid,"money",data[uid]["money"] + money)
         str += "一小时内你将无法继续工作"
         await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
+
+    async def yinpa_transfer(
+            matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
+    ):
+        """处理转账
+        """
+        
+        if not Utils.group_enable_check(event.group_id):
+            await matcher.finish("本群银趴已禁用")
+        uid: str = event.get_user_id()
+        if not Utils.yinpa_user_presence_check(uid):
+            await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
+        at:list = Utils.get_at(event)
+        command: str = args.extract_plain_text()
+        arg_list: list = command.split()
+        if not arg_list:
+            await matcher.finish("错误：参数错误！\n命令：/transfer <金额> <@某人 或 银趴昵称>")
+        if not arg_list[0].isdigit():
+            await matcher.finish("错误：金额必须为正整数！")
+        amount = int(arg_list[0])
+        if amount <= 0:
+            await matcher.finish("错误：金额必须为正整数！")
+        if not at:
+            f_uid = None
+            for i in arg_list[1:]:
+                f_uid = Utils.find_user_name(i)
+                if f_uid:
+                    at = [f_uid]
+                    break
+            if not f_uid:
+                await matcher.finish("错误：未找到目标！")
+        elif at == ['all']:
+            await matcher.finish("错误：不能转账给所有人！")
+        else:
+            at = [at[0]]
+        target: str = at[0]
+        if not Utils.yinpa_user_presence_check(target):
+            await matcher.finish("对方还未加入银趴！")
+        if uid == target:
+            await matcher.finish("你不能给自己转账！")
+        if data[uid]['money'] < amount:
+            await matcher.finish(f"错误：你的金钱不够！\n需要：{amount}\n你的金钱：{data[uid]['money']}")
+        DHandles.data_set(uid,'money',data[uid]['money'] - amount)
+        DHandles.data_set(target,'money',data[target]['money'] + amount)
+        await matcher.finish(f"转账{amount}给{data[target]['name']}成功，现在你的余额是{round(data[uid]['money'],2)}")
 
     # async def test(
     #     matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()

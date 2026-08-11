@@ -284,14 +284,17 @@ class Utils:
             uid (str): 用户id
 
         Returns:
-            int: 舰装等级
+            list: 舰装技能条目，未生效时返回空列表
         """
         
-        b = 0
         s = Utils.get_skill(uid,6)
-        if s and s[1] and s[1] <= time():
-            b = s[2]
-        return b
+        if not s:
+            return []
+
+        cooldown_end = s[1]
+        if cooldown_end is None or cooldown_end <= time():
+            return s
+        return []
 
     def vampire(uid: str):
         """判断吸血鬼技能是否生效
