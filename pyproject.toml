@@ -1,7 +1,7 @@
 [project]
 name = "nonebot-plugin-chikari-yinpa-fix"
-version = "1.4.12"
-description = "Fixed something by AI"
+version = "1.4.14"
+description = "NoneBot2 银趴插件（修复版）"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -14,7 +14,7 @@ dependencies = [
     "nonebot-adapter-onebot",
     "nonebot-plugin-localstore",
 ]
-keywords = ["nonebot", "plugin", "chikari", "yinpa"]
+keywords = ["nonebot", "plugin", "chikari", "yinpa", "fix"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",

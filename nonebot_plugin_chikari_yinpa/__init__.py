@@ -1,4 +1,5 @@
-from nonebot import on_command
+from nonebot import on_command, require
+require("nonebot_plugin_localstore")
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.permission import SUPERUSER
 
@@ -8,16 +9,16 @@ from .config import Config
 from .handles import yinpa_Handles
 
 __plugin_meta__ = PluginMetadata(
-    name="Chikari_yinpa",
-    description="一个普通的银趴插件",
+    name="Chikari_Yinpa_Fix",
+    description="一个普通的银趴插件（修复版）",
     usage="",
     config=Config,
     type="application",
-    homepage="https://github.com/mrqx0195/nonebot_plugin_chikari_yinpa",
+    homepage="https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix",
     supported_adapters={"~onebot.v11"}
 )
 
-__version__ = "1.4.3"
+__version__ = "1.4.13"
 
 on_yinpa_control = on_command(
     "yinpa_control",

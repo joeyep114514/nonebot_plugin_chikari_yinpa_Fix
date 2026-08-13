@@ -176,3 +176,12 @@ pyrightconfig.json
 !.vscode/*.code-snippets
 setup.bat
 .gitignore
+tests/config.json
+tests/data.json
+tests/test_transfer.py
+tests/test_utils_boat.py
+tests/test_utils_pandora.py
+tests/test_transfer.py
+tests/test_utils_boat.py
+tests/test_transfer.py
+tests/test_utils_boat.py

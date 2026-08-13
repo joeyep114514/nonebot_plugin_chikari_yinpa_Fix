@@ -150,21 +150,22 @@ class DHandles():
         
         global data
         b = False
-        for i in range(len(data[uid]["skill"])):
-            if data[uid]["skill"][i][0] == id:
-                data[uid]["skill"][i][1] = value
-                if len(data[uid]["skill"][i]) >= 3:
+        skills = data[uid]["skill"]
+        for i in list(skills):
+            if i[0] == id:
+                i[1] = value
+                if len(i) >= 3:
                     if mode == 'add':
-                        level += data[uid]["skill"][i][2]
-                    data[uid]["skill"][i][2] = level
+                        level += i[2]
+                    i[2] = level
                 else:
-                    data[uid]["skill"][i].insert(2,level)
+                    i.insert(2,level)
                 b = True
                 break
-            if data[uid]["skill"][i][2] <= 0:
-                del data[uid]["skill"][i]
+            if i[2] <= 0:
+                skills.remove(i)
         if not b:
-            data[uid]["skill"].append([id,value,level])
+            skills.append([id,value,level])
         return f"获得技能：{dicts.skill_dict[id]}（等级：{level}）（ID：{id}）\n"
     
     def state_refresh(uid: str,id: int,value = time(),level: int = 1,mode: str = ''):

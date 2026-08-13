@@ -558,9 +558,7 @@ class Utils:
         elif id == 11:
             str += DHandles.skill_refresh(uid,9,level = 1,mode = 'add')
         elif id == 12:
-            l = [10,11,12,13,14,15,]
-            for i in l:
-                DHandles.skill_refresh(uid,i,level = 0)
+            data[uid]["skill"] = [i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15,]]
             str += "已清除所有诅咒"
         elif id == 13:
             l = data[uid]["skill"] + sample([[10,None,0],[11,None,0],[12,None,0],[13,None,0],[14,None,0],[15,None,0],],5)

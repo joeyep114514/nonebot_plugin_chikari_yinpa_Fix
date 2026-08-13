@@ -6,16 +6,16 @@
 
 <div align="center">
 
-# nonebot-plugin-chikari-yinpa
+# nonebot-plugin-chikari-yinpa-fix
 
-_✨ NoneBot 一个普通的银趴插件 ✨_
+_✨ NoneBot 一个普通的银趴插件（修复版）✨_
 
 
 <a href="./LICENSE">
-    <img src="https://img.shields.io/github/license/mrqx0195/nonebot_plugin_chikari_yinpa" alt="license">
+    <img src="https://img.shields.io/github/license/joeyep114514/nonebot_plugin_chikari_yinpa_Fix" alt="license">
 </a>
-<a href="https://pypi.python.org/pypi/nonebot-plugin-chikari-yinpa">
-    <img src="https://img.shields.io/pypi/v/nonebot-plugin-chikari-yinpa.svg" alt="pypi">
+<a href="https://pypi.python.org/pypi/nonebot-plugin-chikari-yinpa-fix">
+    <img src="https://img.shields.io/pypi/v/nonebot-plugin-chikari-yinpa-fix.svg" alt="pypi">
 </a>
 <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="python">
 
@@ -34,7 +34,7 @@ _✨ NoneBot 一个普通的银趴插件 ✨_
 <summary>使用 nb-cli 安装</summary>
 在 nonebot2 项目的根目录下打开命令行, 输入以下指令即可安装
 
-    nb plugin install nonebot-plugin-chikari-yinpa
+    nb plugin install nonebot-plugin-chikari-yinpa-fix
 
 </details>
 
@@ -45,22 +45,22 @@ _✨ NoneBot 一个普通的银趴插件 ✨_
 <details>
 <summary>pip</summary>
 
-    pip install nonebot-plugin-chikari-yinpa
+    pip install nonebot-plugin-chikari-yinpa-fix
 </details>
 <details>
 <summary>pdm</summary>
 
-    pdm add nonebot-plugin-chikari-yinpa
+    pdm add nonebot-plugin-chikari-yinpa-fix
 </details>
 <details>
 <summary>poetry</summary>
 
-    poetry add nonebot-plugin-chikari-yinpa
+    poetry add nonebot-plugin-chikari-yinpa-fix
 </details>
 <details>
 <summary>conda</summary>
 
-    conda install nonebot-plugin-chikari-yinpa
+    conda install nonebot-plugin-chikari-yinpa-fix
 </details>
 
 打开 nonebot2 项目根目录下的 `pyproject.toml` 文件, 在 `[tool.nonebot]` 部分追加写入
@@ -68,7 +68,6 @@ _✨ NoneBot 一个普通的银趴插件 ✨_
     plugins = ["nonebot_plugin_chikari_yinpa"]
 
 </details>
-
 ## ⚙️ 配置
 
 在 nonebot2 项目的`.env`文件中添加下表中的必填配置
@@ -88,7 +87,7 @@ _✨ NoneBot 一个普通的银趴插件 ✨_
 | 指令 | 权限 | 需要@ | 范围 | 说明 |
 |:-----:|:----:|:----:|:----:|:----:|
 | yinpa_control | 主人/群主/管理员 | 否 | 群聊 | 控制本群银趴的开启/关闭 |
-| help | 无 | 否 | 私聊/群聊 | 查询Chikari_yinpa的帮助 |
+| help | 无 | 否 | 私聊/群聊 | 查询Chikari_Yinpa_Fix的帮助 |
 | sign_in | 无 | 否 | 私聊/群聊 | 每日打卡，每天可使用一次，增加长度、深度、金钱 |
 | yinpa_join | 无 | 否 | 私聊/群聊 | 加入银趴！ |
 | yinpa_leave | 无 | 否 | 私聊/群聊 | 离开银趴！ |
@@ -102,7 +101,7 @@ _✨ NoneBot 一个普通的银趴插件 ✨_
 
 ## 🔭 TODO
 
-### 如果有什么好的想法，欢迎提交[issue](https://github.com/mrqx0195/nonebot_plugin_chikari_yinpa/issues)或[pr](https://github.com/mrqx0195/nonebot_plugin_chikari_yinpa/pulls)
+### 如果有什么好的想法，欢迎提交[issue](https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix/issues)或[pr](https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix/pulls)
 
 - [ ] 将经济相关拆分为单独的插件，未来可与其他插件互通
 
