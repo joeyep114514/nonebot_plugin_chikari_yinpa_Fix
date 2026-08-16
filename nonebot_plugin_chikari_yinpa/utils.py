@@ -2,7 +2,7 @@ from nonebot.adapters.onebot.v11 import GroupMessageEvent
 from nonebot import get_plugin_config,get_bots
 
 import json
-from random import randint,seed,sample,choice
+from random import randint,seed,choice
 from time import time,localtime
 from PIL import Image,ImageDraw,ImageFont
 from io import BytesIO
@@ -564,10 +564,13 @@ class Utils:
             data[uid]["skill"] = [i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15,]]
             str += "已清除所有诅咒"
         elif id == 13:
-            l = data[uid]["skill"] + sample([[10,None,0],[11,None,0],[12,None,0],[13,None,0],[14,None,0],[15,None,0],],5)
-            sk = choice(l)
-            sk[2] = round((sum(i[2] for i in l)) ** 0.5)
-            str += DHandles.skill_refresh(uid,sk[0],level = sk[2])
+            d = Utils.dice(10,13)
+            pool = [i for i in range(2,16)]
+            if Utils.get_skill(uid,9):
+                pool.remove(9)
+            sk = choice(pool)
+            str += f"1d10 = {d}\n"
+            str += DHandles.skill_refresh(uid,sk,level = 5 + d,mode = 'add')
         elif id == 14:
             d = Utils.dice(10,13)
             str += f"1d10 = {d}"
@@ -585,16 +588,18 @@ class Utils:
                 DHandles.data_set(uid,'strength',data[uid]['strength'] + d)
             elif d == 4:
                 d = Utils.dice(10,134)
-                str += f"1d10 = {d}\n体质：{data[uid]['constitution']} → {data[uid]['constitution'] + d}"
-                DHandles.data_set(uid,'constitution',data[uid]['constitution'] + d)
+                new_value = min(data[uid]['constitution'] + d, 90)
+                str += f"1d10 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
+                DHandles.data_set(uid,'constitution',new_value)
             elif d == 5:
                 d = Utils.dice(10,135)
                 str += f"1d10 = {d}\n技巧：{data[uid]['technique']} → {data[uid]['technique'] + d}"
                 DHandles.data_set(uid,'technique',data[uid]['technique'] + d)
             elif d == 6:
                 d = Utils.dice(10,136)
-                str += f"1d10 = {d}\n意志：{data[uid]['volition']} → {data[uid]['volition'] + d}"
-                DHandles.data_set(uid,'volition',data[uid]['volition'] + d)
+                new_value = min(data[uid]['volition'] + d, 90)
+                str += f"1d10 = {d}\n意志：{data[uid]['volition']} → {new_value}"
+                DHandles.data_set(uid,'volition',new_value)
             elif d == 7:
                 d = Utils.dice(10,137)
                 str += f"1d10 = {d}\n智力：{data[uid]['intelligence']} → {data[uid]['intelligence'] + d}"
@@ -633,16 +638,18 @@ class Utils:
                     DHandles.data_set(uid,'strength',data[uid]['strength'] + d * si)
                 elif d == 4:
                     d = Utils.dice(100,134)
-                    str += f"1d100 = {d}\n体质：{data[uid]['constitution']} → {data[uid]['constitution'] + d * si}"
-                    DHandles.data_set(uid,'constitution',data[uid]['constitution'] + d * si)
+                    new_value = min(data[uid]['constitution'] + d * si, 90)
+                    str += f"1d100 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
+                    DHandles.data_set(uid,'constitution',new_value)
                 elif d == 5:
                     d = Utils.dice(100,135)
                     str += f"1d100 = {d}\n技巧：{data[uid]['technique']} → {data[uid]['technique'] + d * si}"
                     DHandles.data_set(uid,'technique',data[uid]['technique'] + d * si)
                 elif d == 6:
                     d = Utils.dice(100,136)
-                    str += f"1d100 = {d}\n意志：{data[uid]['volition']} → {data[uid]['volition'] + d * si}"
-                    DHandles.data_set(uid,'volition',data[uid]['volition'] + d * si)
+                    new_value = min(data[uid]['volition'] + d * si, 90)
+                    str += f"1d100 = {d}\n意志：{data[uid]['volition']} → {new_value}"
+                    DHandles.data_set(uid,'volition',new_value)
                 elif d == 7:
                     d = Utils.dice(100,137)
                     str += f"1d100 = {d}\n智力：{data[uid]['intelligence']} → {data[uid]['intelligence'] + d * si}"
