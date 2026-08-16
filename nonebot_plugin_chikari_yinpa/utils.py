@@ -2,7 +2,7 @@ from nonebot.adapters.onebot.v11 import GroupMessageEvent
 from nonebot import get_plugin_config,get_bots
 
 import json
-from random import randint,seed,sample,choice
+from random import randint,seed,choice
 from time import time,localtime
 from PIL import Image,ImageDraw,ImageFont
 from io import BytesIO
@@ -564,10 +564,10 @@ class Utils:
             data[uid]["skill"] = [i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15,]]
             str += "已清除所有诅咒"
         elif id == 13:
-            l = data[uid]["skill"] + sample([[10,None,0],[11,None,0],[12,None,0],[13,None,0],[14,None,0],[15,None,0],],5)
-            sk = choice(l)
-            sk[2] = round((sum(i[2] for i in l)) ** 0.5)
-            str += DHandles.skill_refresh(uid,sk[0],level = sk[2])
+            d = Utils.dice(10,13)
+            sk = choice(list(range(2,16)))
+            str += f"1d10 = {d}\n"
+            str += DHandles.skill_refresh(uid,sk,level = 5 + d,mode = 'add')
         elif id == 14:
             d = Utils.dice(10,13)
             str += f"1d10 = {d}"
