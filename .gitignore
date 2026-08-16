@@ -176,6 +176,7 @@ pyrightconfig.json
 !.vscode/*.code-snippets
 setup.bat
 .gitignore
+chikari_repo/
 tests/config.json
 tests/data.json
 tests/test_transfer.py

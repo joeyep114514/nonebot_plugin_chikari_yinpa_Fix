@@ -58,10 +58,10 @@ class DHandles():
         global configdata
         f = open(plugin_data_file,'w')
         json.dump(data,f,indent=4)
-        f.close
+        f.close()
         f = open(plugin_config_file,'w')
         json.dump(configdata,f,indent=4)
-        f.close
+        f.close()
 
     def data_set(uid: str,key: str,value):
         """设置特定用户的特定数值
@@ -73,7 +73,6 @@ class DHandles():
         """
         
         global data
-        DHandles.file_save()
         data[uid][key] = value
         DHandles.file_save()
         return
@@ -87,7 +86,6 @@ class DHandles():
         """
         
         global configdata
-        DHandles.file_save()
         configdata[key] = value
         DHandles.file_save()
         return
@@ -100,7 +98,6 @@ class DHandles():
         """
         
         global configdata
-        DHandles.file_save()
         configdata["yinpa_enabled_group"].remove(group_id)
         DHandles.file_save()
         return
@@ -114,7 +111,6 @@ class DHandles():
         """
         
         global data
-        DHandles.file_save()
         data[uid] = dict
         data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
         data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
@@ -129,7 +125,6 @@ class DHandles():
         """
         
         global data
-        DHandles.file_save()
         del data[uid]
         DHandles.file_save()
         return
