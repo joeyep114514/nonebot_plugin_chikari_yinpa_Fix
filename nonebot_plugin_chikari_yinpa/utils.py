@@ -197,7 +197,7 @@ class Utils:
         for i in data[uid]["state"]:
             if len(i) <= 2:
                 DHandles.state_refresh(uid,i[0],i[1])
-        new_state = data[uid]["state"]
+        new_state = list(data[uid]["state"])
         for i in data[uid]["state"]:
             if i[1] <= time():
                 new_state.remove(i)
@@ -567,7 +567,7 @@ class Utils:
             for i in l:
                 sk[2] += i[2]
             str += DHandles.skill_refresh(uid,sk[0],level = sk[2])
-        elif id == 13:
+        elif id == 14:
             d = Utils.dice(10,13)
             str += f"1d10 = {d}"
             if d == 1:

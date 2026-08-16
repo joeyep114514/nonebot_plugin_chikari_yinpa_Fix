@@ -58,10 +58,10 @@ class DHandles():
         global configdata
         f = open(plugin_data_file,'w')
         json.dump(data,f,indent=4)
-        f.close
+        f.close()
         f = open(plugin_config_file,'w')
         json.dump(configdata,f,indent=4)
-        f.close
+        f.close()
 
     def data_set(uid: str,key: str,value):
         """设置特定用户的特定数值
