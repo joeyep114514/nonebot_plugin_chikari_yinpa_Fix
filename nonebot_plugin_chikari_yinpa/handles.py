@@ -726,8 +726,11 @@ class yinpa_Handles():
                         i = 'penis_length'
                     elif i == 8:
                         i = 'vagina_depth'
-                    str += f"你的{dicts.attribute_dict[i]}： {data[uid][i]} → {data[uid][i] + d}\n"
-                    DHandles.data_set(uid,i,(data[uid][i] + d))
+                    new_value = data[uid][i] + d
+                    if i in ['constitution','volition']:
+                        new_value = min(new_value, 90)
+                    str += f"你的{dicts.attribute_dict[i]}： {data[uid][i]} → {new_value}\n"
+                    DHandles.data_set(uid,i,new_value)
                 elif d >= 8 and d <= 10:
                     l = [10,11,12,13,14,15,]
                     i = Utils.dice(len(l),(int)(uid) ^ 106)

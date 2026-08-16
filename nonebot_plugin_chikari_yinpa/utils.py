@@ -585,16 +585,18 @@ class Utils:
                 DHandles.data_set(uid,'strength',data[uid]['strength'] + d)
             elif d == 4:
                 d = Utils.dice(10,134)
-                str += f"1d10 = {d}\n体质：{data[uid]['constitution']} → {data[uid]['constitution'] + d}"
-                DHandles.data_set(uid,'constitution',data[uid]['constitution'] + d)
+                new_value = min(data[uid]['constitution'] + d, 90)
+                str += f"1d10 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
+                DHandles.data_set(uid,'constitution',new_value)
             elif d == 5:
                 d = Utils.dice(10,135)
                 str += f"1d10 = {d}\n技巧：{data[uid]['technique']} → {data[uid]['technique'] + d}"
                 DHandles.data_set(uid,'technique',data[uid]['technique'] + d)
             elif d == 6:
                 d = Utils.dice(10,136)
-                str += f"1d10 = {d}\n意志：{data[uid]['volition']} → {data[uid]['volition'] + d}"
-                DHandles.data_set(uid,'volition',data[uid]['volition'] + d)
+                new_value = min(data[uid]['volition'] + d, 90)
+                str += f"1d10 = {d}\n意志：{data[uid]['volition']} → {new_value}"
+                DHandles.data_set(uid,'volition',new_value)
             elif d == 7:
                 d = Utils.dice(10,137)
                 str += f"1d10 = {d}\n智力：{data[uid]['intelligence']} → {data[uid]['intelligence'] + d}"
@@ -633,16 +635,18 @@ class Utils:
                     DHandles.data_set(uid,'strength',data[uid]['strength'] + d * si)
                 elif d == 4:
                     d = Utils.dice(100,134)
-                    str += f"1d100 = {d}\n体质：{data[uid]['constitution']} → {data[uid]['constitution'] + d * si}"
-                    DHandles.data_set(uid,'constitution',data[uid]['constitution'] + d * si)
+                    new_value = min(data[uid]['constitution'] + d * si, 90)
+                    str += f"1d100 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
+                    DHandles.data_set(uid,'constitution',new_value)
                 elif d == 5:
                     d = Utils.dice(100,135)
                     str += f"1d100 = {d}\n技巧：{data[uid]['technique']} → {data[uid]['technique'] + d * si}"
                     DHandles.data_set(uid,'technique',data[uid]['technique'] + d * si)
                 elif d == 6:
                     d = Utils.dice(100,136)
-                    str += f"1d100 = {d}\n意志：{data[uid]['volition']} → {data[uid]['volition'] + d * si}"
-                    DHandles.data_set(uid,'volition',data[uid]['volition'] + d * si)
+                    new_value = min(data[uid]['volition'] + d * si, 90)
+                    str += f"1d100 = {d}\n意志：{data[uid]['volition']} → {new_value}"
+                    DHandles.data_set(uid,'volition',new_value)
                 elif d == 7:
                     d = Utils.dice(100,137)
                     str += f"1d100 = {d}\n智力：{data[uid]['intelligence']} → {data[uid]['intelligence'] + d * si}"
