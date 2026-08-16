@@ -57,6 +57,7 @@ class Utils:
         DHandles.data_set(uid,"last_operation_time",(int)(time()/60))
         return
     
+    _dice_counter = 0
     def dice(d:int,_seed):
         """骰子
 
@@ -71,7 +72,8 @@ class Utils:
         d = int(d)
         if d <= 0:
             return 0
-        seed((int)(time() * 1000) ^ d ^ (int)(_seed))
+        Utils._dice_counter += 1
+        seed((int)(time() * 1000) ^ d ^ (int)(_seed) ^ (Utils._dice_counter * 7919))
         return randint(1, d)
     
     def get_at(event: GroupMessageEvent):
