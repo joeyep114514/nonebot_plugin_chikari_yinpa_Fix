@@ -429,9 +429,9 @@ class Utils:
                 str += f"\n{data[uid]['name']}高潮了！\n意志检定：1d100 = {d}"
                 if d >= data[uid]['volition']:
                     DHandles.data_set(uid,'hp_v',0)
-                    d = Utils.dice(10,(int)(uid) ^ 11)
+                    d = min(Utils.dice(30,(int)(uid) ^ 11), 30)
                     DHandles.state_refresh(uid,1,time() + d * 60)
-                    str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d10 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                    str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
                 else:
                     d = Utils.dice(data[uid]['volition'],(int)(uid) ^ 12)
                     DHandles.data_set(uid,'hp_v',(d + 10) * 5)
@@ -444,9 +444,9 @@ class Utils:
                 str += f"\n{data[uid]['name']}高潮了！\n体质检定：1d100 = {d}"
                 if d >= data[uid]['constitution']:
                     DHandles.data_set(uid,'hp_c',0)
-                    d = Utils.dice(10,(int)(uid) ^ 14)
+                    d = min(Utils.dice(5,(int)(uid) ^ 14), 5)
                     DHandles.state_refresh(uid,2,time() + d * 3600)
-                    str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d10 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+                    str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
                     if Utils.boat(uid):
                         DHandles.skill_refresh(uid,6,time() + 259200)
                         str += f"\n{data[uid]['name']}的舰装破损了！将进入三天的冷却。"
@@ -556,6 +556,9 @@ class Utils:
         elif id == 10:
             str += DHandles.skill_refresh(uid,8,level = 1,mode = 'add')
         elif id == 11:
+            if Utils.get_skill(uid,9):
+                str += "你已经拥有屹立不倒，不能重复购买。\n"
+                return str
             str += DHandles.skill_refresh(uid,9,level = 1,mode = 'add')
         elif id == 12:
             data[uid]["skill"] = [i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15,]]

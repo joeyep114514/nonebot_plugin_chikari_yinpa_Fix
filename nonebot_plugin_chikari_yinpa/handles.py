@@ -648,9 +648,9 @@ class yinpa_Handles():
             str += f"意志检定：1d100 = {d} "
             if d >= Utils.get_value(uid,'volition')[0]:
                 DHandles.data_set(uid,"hp_v",0)
-                d = Utils.dice(10,(int)(uid) ^ 100)
+                d = min(Utils.dice(30,(int)(uid) ^ 100), 30)
                 DHandles.state_refresh(uid,1,time() + d * 60)
-                str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d10 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
             else:
                 str += f" < {data[uid]['volition']}\n"
         elif work_key == 3:
@@ -679,9 +679,9 @@ class yinpa_Handles():
             str += f"体质检定：1d100 = {d} "
             if d >= Utils.get_value(uid,'constitution')[0]:
                 DHandles.data_set(uid,"hp_v",0)
-                d = Utils.dice(10,(int)(uid) ^ 101)
-                DHandles.state_refresh(uid,1,time() + d * 3600)
-                str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！失神状态将持续1d10 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+                d = min(Utils.dice(5,(int)(uid) ^ 101), 5)
+                DHandles.state_refresh(uid,2,time() + d * 3600)
+                str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
             else:
                 str += f" < {data[uid]['constitution']}\n"
         elif work_key == 6:
