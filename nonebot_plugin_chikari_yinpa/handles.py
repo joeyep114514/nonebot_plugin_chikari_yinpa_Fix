@@ -635,12 +635,12 @@ class yinpa_Handles():
         str = ""
         money = 0
         if work_key == 1:
-            money += (Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0]) * Utils.dice(200,(Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0])) / 100
+            money += (Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0]) * Utils.dice(200,(Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0])) / 12
             if money < 0:
                 money = 0
             str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
         elif work_key == 2:
-            money += (Utils.get_value(uid,'technique')[0] * 0.7 + Utils.get_value(uid,'charm')[0] * 0.9) * Utils.dice(260,(Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'charm')[0])) / 100
+            money += (Utils.get_value(uid,'technique')[0] * 0.7 + Utils.get_value(uid,'charm')[0] * 0.9) * Utils.dice(260,(Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'charm')[0])) / 11
             if money < 0:
                 money = 0
             str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
@@ -654,7 +654,7 @@ class yinpa_Handles():
             else:
                 str += f" < {data[uid]['volition']}\n"
         elif work_key == 3:
-            money += (Utils.get_value(uid,'intelligence')[0] + Utils.get_value(uid,'charm')[0] - 60) * Utils.dice(200,(Utils.get_value(uid,'intelligence')[0] + Utils.get_value(uid,'charm')[0])) / 100
+            money += (Utils.get_value(uid,'intelligence')[0] + Utils.get_value(uid,'charm')[0]) * Utils.dice(200,(Utils.get_value(uid,'intelligence')[0] + Utils.get_value(uid,'charm')[0])) / 13
             if money < 0:
                 money = 0
             str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
@@ -666,24 +666,29 @@ class yinpa_Handles():
                 money += 3 * d
                 str += f" < {data[uid]['intelligence']}\n追加收益：{3 * d}\n"
         elif work_key == 4:
-            money += (Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'intelligence')[0] - 100) * Utils.dice(300,(Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'intelligence')[0])) / 100
+            money += (Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'intelligence')[0] - 40) * Utils.dice(300,(Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'intelligence')[0])) / 11
             if money < 0:
                 money = 0
             str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
         elif work_key == 5:
-            money += (Utils.get_value(uid,'strength')[0] * 0.9 + Utils.get_value(uid,'constitution')[0] * 0.8) * Utils.dice(200,(Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0])) / 120
+            money += (Utils.get_value(uid,'strength')[0] * 0.9 + Utils.get_value(uid,'constitution')[0] * 0.8) * Utils.dice(200,(Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0])) / 6.5
             if money < 0:
                 money = 0
             str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,Utils.get_value(uid,'constitution')[0])
+            d = Utils.dice(100,(int)(uid) ^ 101)
             str += f"体质检定：1d100 = {d} "
-            if d >= Utils.get_value(uid,'constitution')[0]:
-                DHandles.data_set(uid,"hp_v",0)
-                d = min(Utils.dice(5,(int)(uid) ^ 101), 5)
-                DHandles.state_refresh(uid,2,time() + d * 3600)
-                str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+            if d > 50:
+                d = Utils.dice(100,Utils.get_value(uid,'constitution')[0])
+                str += f"（触发检定）1d100 = {d} "
+                if d >= Utils.get_value(uid,'constitution')[0]:
+                    DHandles.data_set(uid,"hp_v",0)
+                    d = Utils.dice(3,(int)(uid) ^ 103)
+                    DHandles.state_refresh(uid,2,time() + d * 3600)
+                    str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d3 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+                else:
+                    str += f" < {data[uid]['constitution']}\n"
             else:
-                str += f" < {data[uid]['constitution']}\n"
+                str += "未触发体质检定\n"
         elif work_key == 6:
             d = Utils.dice(100,(int)(uid) ^ 102)
             money += (d - 80) * 500
