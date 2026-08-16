@@ -565,7 +565,10 @@ class Utils:
             str += "已清除所有诅咒"
         elif id == 13:
             d = Utils.dice(10,13)
-            sk = choice([i for i in range(2,16) if i != 9])
+            pool = [i for i in range(2,16)]
+            if Utils.get_skill(uid,9):
+                pool.remove(9)
+            sk = choice(pool)
             str += f"1d10 = {d}\n"
             str += DHandles.skill_refresh(uid,sk,level = 5 + d,mode = 'add')
         elif id == 14:

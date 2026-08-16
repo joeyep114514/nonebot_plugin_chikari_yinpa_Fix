@@ -146,6 +146,9 @@ class DHandles():
         global data
         b = False
         skills = data[uid]["skill"]
+        if id == 9:
+            level = 1
+            mode = ''
         for i in list(skills):
             if i[0] == id:
                 i[1] = value
