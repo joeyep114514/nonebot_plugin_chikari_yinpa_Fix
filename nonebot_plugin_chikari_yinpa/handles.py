@@ -414,9 +414,9 @@ class yinpa_Handles():
             await matcher.finish("对方还未加入银趴！")
         if uid == at:
             await matcher.finish("你想榨自己？请使用 /冲 或 /扣")
-        oc = Utils.operation_check(uid)
         Utils.refresh_data(uid)
         Utils.refresh_data(at)
+        oc = Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
         if Utils.get_state(at,2):
@@ -568,6 +568,8 @@ class yinpa_Handles():
         if not Utils.group_enable_check(event.group_id):
             await matcher.finish("本群银趴已禁用")
         uid = event.get_user_id()
+        if not Utils.yinpa_user_presence_check(uid):
+            await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
         command = args.extract_plain_text()
         shop_key = command.split()
         if not shop_key:
