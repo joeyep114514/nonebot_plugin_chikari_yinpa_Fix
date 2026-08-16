@@ -705,7 +705,7 @@ class yinpa_Handles():
                 elif d >= 2 and d <= 4:
                     l = list(dicts.state_dict.keys())
                     i = Utils.dice(len(l),(int)(uid) ^ 106)
-                    d = Utils.dice(86400,(int)(uid) ^ 107)
+                    d = Utils.dice(36000,(int)(uid) ^ 107)
                     str += DHandles.state_refresh(uid,i,time() + d,level = 1,mode = 'add')
                 elif d >= 5 and d <= 7:
                     i = Utils.dice(8,(int)(uid) ^ 108)
