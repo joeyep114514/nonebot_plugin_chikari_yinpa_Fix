@@ -563,9 +563,7 @@ class Utils:
         elif id == 13:
             l = data[uid]["skill"] + sample([[10,None,0],[11,None,0],[12,None,0],[13,None,0],[14,None,0],[15,None,0],],5)
             sk = choice(l)
-            sk[2] = 0
-            for i in l:
-                sk[2] += i[2]
+            sk[2] = round((sum(i[2] for i in l)) ** 0.5)
             str += DHandles.skill_refresh(uid,sk[0],level = sk[2])
         elif id == 13:
             d = Utils.dice(10,13)
