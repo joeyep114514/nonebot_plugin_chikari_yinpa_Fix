@@ -126,10 +126,15 @@ class Utils:
         """
         
         fontSize = 20
+        # 防御：限制单行长度与总行数，防止超长文本（如超长昵称）触发超大图像分配导致内存/CPU 耗尽
+        max_line_len = 100
+        max_lines = 100
         liens = text.split('\n')
+        liens = [line[:max_line_len] for line in liens][:max_lines]
+        text = "\n".join(liens)
         max_len = 0
-        for str in liens:
-            max_len = max(len(str),max_len)
+        for line in liens:
+            max_len = max(len(line),max_len)
         image = Image.new("RGB", ((fontSize * max_len), len(liens) * (fontSize + 5)), (255, 255, 255))
         draw = ImageDraw.Draw(image)
         font = ImageFont.truetype(_get_plugin_config().chikari_yinpa_font, fontSize)
