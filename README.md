@@ -1,8 +1,7 @@
-<a href="https://v2.nonebot.dev/store">
-    <img src="./image/NoneBotPlugin.svg" width="300" alt="logo">
-</a>
-
 <div align="center">
+    <a href="https://v2.nonebot.dev/store">
+        <img src="./image/NoneBotPlugin.svg" width="300" alt="logo">
+    </a>
 
 # nonebot-plugin-chikari-yinpa-fix
 
