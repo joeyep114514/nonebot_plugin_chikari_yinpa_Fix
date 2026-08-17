@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-chikari-yinpa-fix"
-version = "1.4.14"
+version = "1.4.16"
 description = "NoneBot2 银趴插件（修复版）"
 readme = "README.md"
 requires-python = ">=3.8"
