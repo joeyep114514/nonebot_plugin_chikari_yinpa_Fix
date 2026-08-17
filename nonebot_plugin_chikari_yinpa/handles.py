@@ -644,9 +644,9 @@ class yinpa_Handles():
             if money < 0:
                 money = 0
             str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,Utils.get_value(uid,'volition')[0])
+            d = Utils.dice(100,data[uid]['volition'])
             str += f"意志检定：1d100 = {d} "
-            if d >= Utils.get_value(uid,'volition')[0]:
+            if d >= data[uid]['volition']:
                 DHandles.data_set(uid,"hp_v",0)
                 d = min(Utils.dice(30,(int)(uid) ^ 100), 30)
                 DHandles.state_refresh(uid,1,time() + d * 60)
@@ -678,9 +678,9 @@ class yinpa_Handles():
             d = Utils.dice(100,(int)(uid) ^ 101)
             str += f"体质检定：1d100 = {d} "
             if d > 50:
-                d = Utils.dice(100,Utils.get_value(uid,'constitution')[0])
+                d = Utils.dice(100,data[uid]['constitution'])
                 str += f"（触发检定）1d100 = {d} "
-                if d >= Utils.get_value(uid,'constitution')[0]:
+                if d >= data[uid]['constitution']:
                     DHandles.data_set(uid,"hp_v",0)
                     d = Utils.dice(3,(int)(uid) ^ 103)
                     DHandles.state_refresh(uid,2,time() + d * 3600)
@@ -705,7 +705,7 @@ class yinpa_Handles():
                 elif d >= 2 and d <= 4:
                     l = list(dicts.state_dict.keys())
                     i = Utils.dice(len(l),(int)(uid) ^ 106)
-                    d = Utils.dice(86400,(int)(uid) ^ 107)
+                    d = Utils.dice(36000,(int)(uid) ^ 107)
                     str += DHandles.state_refresh(uid,i,time() + d,level = 1,mode = 'add')
                 elif d >= 5 and d <= 7:
                     i = Utils.dice(8,(int)(uid) ^ 108)
