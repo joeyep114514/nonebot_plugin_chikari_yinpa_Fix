@@ -19,6 +19,10 @@ def _get_plugin_config():
 
 from .dicts import dicts
 
+# 昵称最大长度（字符数）
+# 用于防止超长昵称在 get_user_info_image -> text_to_image 中触发超大图像分配（内存/CPU 耗尽）
+MAX_NAME_LENGTH = 32
+
 class yinpa_Handles():
     """消息处理
     """
@@ -81,6 +85,8 @@ class yinpa_Handles():
         else:
             bot = get_bots()[(str)(event.self_id)]
             name: str = (await bot.call_api("get_group_member_info",group_id = event.group_id,user_id = uid))["nickname"]
+        if len(name) > MAX_NAME_LENGTH:
+            await matcher.finish(f"昵称过长！\n昵称请控制在 {MAX_NAME_LENGTH} 个字符以内")
         if len(arg_list) >= 2:
             if not arg_list[1].isdigit():
                 await matcher.finish("参数错误！\n种族应为一个正整数（种族编号）\n种族列表参照： /yinpa_help 种族 ")
