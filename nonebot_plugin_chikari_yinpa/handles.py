@@ -633,7 +633,7 @@ class yinpa_Handles():
         oc = Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
-        if data[uid]["next_work_time"] >= time():
+        if DHandles.work_cooldown_get(uid) >= time():
             await matcher.finish("你现在正在工作冷却中！")
         if work_key in list(dicts.work_dict.values()):
             work_key = (list(dicts.work_dict.keys()))[(list(dicts.work_dict.values())).index(work_key)]
@@ -742,7 +742,7 @@ class yinpa_Handles():
                     i = Utils.dice(len(l),(int)(uid) ^ 106)
                     d = Utils.dice(86400,(int)(uid) ^ 107)
                     str += DHandles.skill_refresh(uid,l[i - 1],level = 1,mode = 'add')
-        DHandles.data_set(uid,"next_work_time",(time() + 3600))
+        DHandles.work_cooldown_set(uid,(time() + 3600))
         DHandles.data_set(uid,"money",data[uid]["money"] + money)
         str += "一小时内你将无法继续工作"
         await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
