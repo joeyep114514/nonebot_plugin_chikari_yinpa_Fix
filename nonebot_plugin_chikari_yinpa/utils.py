@@ -410,7 +410,7 @@ class Utils:
         if i := Utils.get_skill(target,2):
             atk.append([-30 * sqrt(i[2]),f"{data[target]['name']}：猫化",False])
         if i := Utils.get_skill(target,3):
-            atk.append([-Utils.get_value(uid,'intelligence')[0] / 2 * sqrt(i[2]),f"{data[target]['name']}：自然之心",False])
+            atk.append([-Utils.get_value(target,'intelligence')[0] / 2 * sqrt(i[2]),f"{data[target]['name']}：自然之心",False])
         if i := Utils.get_skill(target,4):
             atk.append([-80 * sqrt(i[2]),f"{data[target]['name']}：圣体",False])
         if i := Utils.get_skill(uid,10):

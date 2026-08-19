@@ -35,6 +35,9 @@ if not plugin_data_file.exists() or plugin_data_file.stat().st_size == 0:
 else:
     data = json.loads(plugin_data_file.read_text(encoding='utf-8'), strict=False)
 
+if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
+    data["_work_cooldown"] = {}
+
 #配置数据文件初始化及载入
 
 if not plugin_config_file.exists() or plugin_config_file.stat().st_size == 0:
@@ -126,6 +129,36 @@ class DHandles():
         
         global data
         del data[uid]
+        DHandles.file_save()
+        return
+    
+    def work_cooldown_get(uid: str):
+        """读取用户独立的工作冷却结束时间（跨注销保留）
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            int: 下次可工作的时间戳，无记录时为 0
+        """
+        
+        global data
+        if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
+            data["_work_cooldown"] = {}
+        return data["_work_cooldown"].get(uid, 0)
+    
+    def work_cooldown_set(uid: str,value):
+        """写入用户独立的工作冷却结束时间（跨注销保留）
+
+        Args:
+            uid (str): 用户id
+            value (int): 下次可工作的时间戳
+        """
+        
+        global data
+        if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
+            data["_work_cooldown"] = {}
+        data["_work_cooldown"][uid] = value
         DHandles.file_save()
         return
     
