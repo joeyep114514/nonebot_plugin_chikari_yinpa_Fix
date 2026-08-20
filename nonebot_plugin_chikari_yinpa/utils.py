@@ -547,7 +547,7 @@ class Utils:
         """
         
         for i in data.keys():
-            if data[i]['name'] == name:
+            if data[i].get('name') == name:
                 return i
         return None
     
