@@ -7,6 +7,7 @@ from time import time,localtime
 from PIL import Image,ImageDraw,ImageFont
 from io import BytesIO
 from math import sqrt
+from pathlib import Path
 
 from .data_handles import data,configdata,DHandles
 from .dicts import dicts
@@ -20,6 +21,42 @@ def _get_plugin_config():
         return Config()
 
 class Utils:
+    @staticmethod
+    def _is_emoji(character: str):
+        codepoint = ord(character)
+        return (
+            0x1F000 <= codepoint <= 0x1FAFF
+            or 0x2600 <= codepoint <= 0x27BF
+            or 0x2300 <= codepoint <= 0x23FF
+            or 0x2B00 <= codepoint <= 0x2BFF
+        )
+
+    @staticmethod
+    def _load_fonts(font_size: int):
+        plugin_config = _get_plugin_config()
+        main_font = ImageFont.truetype(plugin_config.chikari_yinpa_font, font_size)
+        emoji_path = Path(plugin_config.chikari_yinpa_emoji_font)
+        try:
+            emoji_font = ImageFont.truetype(emoji_path, font_size)
+        except OSError:
+            fallback = Path("/usr/share/fonts/noto/NotoColorEmoji.ttf")
+            emoji_font = ImageFont.truetype(fallback, 109) if fallback.exists() else main_font
+        return main_font, emoji_font, font_size / emoji_font.size
+
+    @staticmethod
+    def _draw_emoji(image, x: int, y: int, character: str, font, scale: float):
+        bbox = font.getbbox(character)
+        width = max(1, bbox[2] - bbox[0])
+        height = max(1, bbox[3] - bbox[1])
+        layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        ImageDraw.Draw(layer).text((-bbox[0], -bbox[1]), character, font=font,
+                                   fill="#000000", embedded_color=False)
+        if scale != 1:
+            layer = layer.resize((max(1, round(width * scale)), max(1, round(height * scale))),
+                                 Image.Resampling.LANCZOS)
+        image.paste(layer, (x, y), layer)
+        return layer.width
+
     def group_enable_check(groupid: int):
         """检查群组是否在银趴列表中
 
@@ -132,13 +169,25 @@ class Utils:
         liens = text.split('\n')
         liens = [line[:max_line_len] for line in liens][:max_lines]
         text = "\n".join(liens)
-        max_len = 0
+        font, emoji_font, emoji_scale = Utils._load_fonts(fontSize)
+        line_widths = []
         for line in liens:
-            max_len = max(len(line),max_len)
-        image = Image.new("RGB", ((fontSize * max_len), len(liens) * (fontSize + 5)), (255, 255, 255))
+            line_width = 0
+            for character in line:
+                line_width += (emoji_font.getlength(character) * emoji_scale if Utils._is_emoji(character)
+                               else font.getlength(character))
+            line_widths.append(line_width)
+        image = Image.new("RGB", (max(1, int(max(line_widths, default=0))), len(liens) * (fontSize + 5)), (255, 255, 255))
         draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype(_get_plugin_config().chikari_yinpa_font, fontSize)
-        draw.text((0, 0), text, font=font, fill="#000000", stroke_width = 0)
+        for line_number, line in enumerate(liens):
+            x = 0
+            y = line_number * (fontSize + 5)
+            for character in line:
+                if Utils._is_emoji(character):
+                    x += Utils._draw_emoji(image, int(x), y, character, emoji_font, emoji_scale)
+                else:
+                    draw.text((x, y), character, font=font, fill="#000000", stroke_width=0)
+                    x += font.getlength(character)
         img = image.convert("RGB")
         img_byte = BytesIO()
         img.save(img_byte,"PNG")

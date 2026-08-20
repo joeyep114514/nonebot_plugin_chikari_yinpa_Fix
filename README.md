@@ -75,7 +75,19 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 | chikari_yinpa_initial_penis_length | 否 | 10 | 初始长度 |
 | chikari_yinpa_initial_vagina_depth | 否 | 10 | 初始深度 |
 | chikari_yinpa_initial_money | 否 | 100 | 初始金钱 |
+<<<<<<< HEAD
 | chikari_yinpa_font | 否 | Path(__file__).parent / "resource" / "SourceHanSansSC-VF.ttf" | 绘图所用字体 |
+=======
+| chikari_yinpa_transfer_unlock_money | 否 | 10000 | 转账功能解锁所需金钱 |
+| chikari_yinpa_transfer_cooldown | 否 | 3600 | 转账冷却时间（秒，默认1小时） |
+| chikari_yinpa_font | 否 | Path(__file__).parent / "resource" / "NotoSansCJK-Regular.ttc" | 绘图所用 Noto Sans CJK 主字体 |
+| chikari_yinpa_emoji_font | 否 | Path(__file__).parent / "resource" / "NotoEmoji.ttf" | 绘图所用黑白 Noto Emoji 字体 |
+
+请将以下字体文件放入 `nonebot_plugin_chikari_yinpa/resource/` 目录：
+
+- `NotoSansCJK-Regular.ttc`
+- `NotoEmoji.ttf`
+>>>>>>> cc0ceec (v1.5.0 将字体换成了CJK字体，额外加了Emoji字体)
 
 ## 🎉 使用
 ### 指令表
