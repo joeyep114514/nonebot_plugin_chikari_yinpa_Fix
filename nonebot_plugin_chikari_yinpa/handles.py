@@ -120,7 +120,6 @@ class yinpa_Handles():
             "last_operation_time":0,
             "last_refresh_time":time(),
             "next_work_time":0,
-            "last_transfer_time":0,
         })
         skill = []
         for i in dicts.species_initial_ability[species][6]:
@@ -759,16 +758,6 @@ class yinpa_Handles():
         uid: str = event.get_user_id()
         if not Utils.yinpa_user_presence_check(uid):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
-        plugin_config = _get_plugin_config()
-        if data[uid].get("money", 0) < (plugin_config.chikari_yinpa_transfer_unlock_money or 10000):
-            await matcher.finish(
-                f"错误：你的金钱未达到转账解锁要求！\n需要：{plugin_config.chikari_yinpa_transfer_unlock_money or 10000}\n你的金钱：{data[uid].get('money', 0)}"
-            )
-        last_transfer_time = data[uid].get("last_transfer_time", 0)
-        transfer_cooldown = plugin_config.chikari_yinpa_transfer_cooldown or 3600
-        if last_transfer_time + transfer_cooldown > time():
-            remaining = int(last_transfer_time + transfer_cooldown - time())
-            await matcher.finish(f"错误：转账冷却中！\n剩余时间：{remaining}秒")
         at:list = Utils.get_at(event)
         command: str = args.extract_plain_text()
         arg_list: list = command.split()
@@ -801,7 +790,6 @@ class yinpa_Handles():
             await matcher.finish(f"错误：你的金钱不够！\n需要：{amount}\n你的金钱：{data[uid]['money']}")
         DHandles.data_set(uid,'money',data[uid]['money'] - amount)
         DHandles.data_set(target,'money',data[target]['money'] + amount)
-        DHandles.data_set(uid,'last_transfer_time',time())
         await matcher.finish(f"转账{amount}给{data[target]['name']}成功，现在你的余额是{round(data[uid]['money'],2)}")
 
     # async def test(

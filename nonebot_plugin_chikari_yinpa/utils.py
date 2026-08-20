@@ -156,16 +156,6 @@ class Utils:
         
         Utils.refresh_data(uid)
         user_data = data[uid]
-        plugin_config = _get_plugin_config()
-        transfer_unlock_money = plugin_config.chikari_yinpa_transfer_unlock_money or 10000
-        transfer_cooldown = plugin_config.chikari_yinpa_transfer_cooldown or 3600
-        transfer_status = "已解锁"
-        if user_data.get("money", 0) < transfer_unlock_money:
-            transfer_status = f"未解锁（金钱达到 {transfer_unlock_money} 后解锁）"
-        else:
-            transfer_remaining = int(user_data.get("last_transfer_time", 0) + transfer_cooldown - time())
-            if transfer_remaining > 0:
-                transfer_status += f"（冷却剩余：{transfer_remaining}秒）"
         skill_text = ""
         state_text = ""
         for i in user_data["skill"]:
@@ -193,7 +183,6 @@ class Utils:
         f"    智力：{user_data['intelligence']}\n"\
         f"    魅力：{user_data['charm']}\n"\
         f"    金钱：{user_data['money']}\n"\
-        f"    转账功能：{transfer_status}\n"\
         f"    技能：{skill_text}\n"\
         f"    状态：{state_text}\n"\
         f"    被动次数：{user_data['passive_times']}\n"\
