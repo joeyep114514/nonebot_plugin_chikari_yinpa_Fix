@@ -17,7 +17,7 @@ class dicts():
         "kou":"kou\n命令：/kou\n命令别称：/扣 /扣扣 /自慰 /紫薇\n扣一次，能够增加少量深度",
         "shop":"shop\n命令：/shop\n命令别称：/商店 /买 /买东西 /店\n花费金钱购买商品\n参见：/yinpa_help shop",
         "work":"work\n命令：/work\n命令别称：/工作 /打工\n工作，获得金钱及其他东西\n参见：/yinpa_help work",
-        "transfer":"transfer\n命令：/transfer <金额> <@某人 或 银趴昵称>\n命令别称：/转账\n将金钱转给某人，例如：/转账 1000 @xxx\n账户金钱达到 10000 后解锁，且每次转账后冷却 1 小时",
+        "transfer":"transfer\n命令：/transfer <金额> <@某人 或 银趴昵称>\n命令别称：/转账\n将金钱转给某人，例如：/转账 1000 @xxx",
     }
     """帮助表
     """
