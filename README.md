@@ -75,6 +75,8 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 | chikari_yinpa_initial_penis_length | 否 | 10 | 初始长度 |
 | chikari_yinpa_initial_vagina_depth | 否 | 10 | 初始深度 |
 | chikari_yinpa_initial_money | 否 | 100 | 初始金钱 |
+| chikari_yinpa_transfer_unlock_money | 否 | 10000 | 转账功能解锁所需金钱 |
+| chikari_yinpa_transfer_cooldown | 否 | 3600 | 转账冷却时间（秒，默认1小时） |
 | chikari_yinpa_font | 否 | Path(__file__).parent / "resource" / "SourceHanSansSC-VF.ttf" | 绘图所用字体 |
 
 ## 🎉 使用
@@ -95,6 +97,7 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 | kou | 无 | 否 | 私聊/群聊 | 扣一次，能够增加少量深度 |
 | shop | 无 | 否 | 私聊/群聊 | 花费金钱购买商品 |
 | work | 无 | 否 | 私聊/群聊 | 工作，获得金钱及其他东西 |
+| transfer | 无 | 否 | 私聊/群聊 | 转账金钱，账户金钱达到 10000 后解锁，冷却 1 小时 |
 
 ## 🔭 TODO
 
