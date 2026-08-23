@@ -35,6 +35,16 @@ class Utils:
     def _load_fonts(font_size: int):
         plugin_config = _get_plugin_config()
         main_font = ImageFont.truetype(plugin_config.chikari_yinpa_font, font_size)
+        # 修复可变字体默认字重过细的问题：
+        # NotoSansCJKsc-VF.ttf 的 wght 轴默认值为 100（Thin），直接加载会渲染成极细字体，
+        # 需显式设置为 Regular（400）才能正常显示。
+        try:
+            main_font.set_variation_by_name("Regular")
+        except Exception:
+            try:
+                main_font.set_variation_by_axes([400])
+            except Exception:
+                pass
         emoji_path = Path(plugin_config.chikari_yinpa_emoji_font)
         try:
             emoji_font = ImageFont.truetype(emoji_path, font_size)
