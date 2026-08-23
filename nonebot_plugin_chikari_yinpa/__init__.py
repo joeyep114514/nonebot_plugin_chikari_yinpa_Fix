@@ -1,5 +1,6 @@
-from nonebot import on_command, require
+from nonebot import get_driver, on_command, require
 require("nonebot_plugin_localstore")
+require("nonebot_plugin_chikari_economy")
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.permission import SUPERUSER
 
@@ -7,6 +8,12 @@ from nonebot.plugin import PluginMetadata
 
 from .config import Config
 from .handles import yinpa_Handles
+from nonebot_plugin_chikari_economy import def_money_type
+
+
+@get_driver().on_startup
+async def register_yinpa_currency():
+    await def_money_type("yp", "YP$", "银趴专用货币")
 
 __plugin_meta__ = PluginMetadata(
     name="Chikari_Yinpa_Fix",

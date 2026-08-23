@@ -12,6 +12,7 @@ from pathlib import Path
 from .data_handles import data,configdata,DHandles
 from .dicts import dicts
 from .config import Config
+import nonebot_plugin_chikari_economy as economy
 
 
 def _get_plugin_config():
@@ -161,6 +162,45 @@ class Utils:
         if data.get(uid):
             return True
         return False
+
+    @staticmethod
+    async def get_money(uid: str) -> float:
+        """获取用户的 YP$ 数量
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            float: YP$ 数量
+        """
+        return await economy.get_user_money(uid, "yp")
+
+    @staticmethod
+    async def set_money(uid: str, value: float) -> float:
+        """设置用户的 YP$ 数量
+
+        Args:
+            uid (str): 用户id
+            value (float): YP$ 数量
+
+        Returns:
+            float: 设置后的 YP$ 数量
+        """
+        await economy.set_money(uid, "yp", value)
+        return value
+
+    @staticmethod
+    async def add_money(uid: str, value: float) -> float:
+        """增加/减少用户的 YP$ 数量
+
+        Args:
+            uid (str): 用户id
+            value (float): 变化量（负数为减少）
+
+        Returns:
+            float: 变化后的 YP$ 数量
+        """
+        return await economy.add_money(uid, "yp", value)
     
     def text_to_image(text: str):
         """文字转图片
@@ -203,7 +243,7 @@ class Utils:
         img.save(img_byte,"PNG")
         return img_byte.getvalue()
 
-    def get_user_info_image(uid: str):
+    async def get_user_info_image(uid: str):
         """获取用户的信息图
 
         Args:
@@ -213,7 +253,7 @@ class Utils:
             bytes: 图片
         """
         
-        Utils.refresh_data(uid)
+        await Utils.refresh_data(uid)
         user_data = data[uid]
         skill_text = ""
         state_text = ""
@@ -241,7 +281,7 @@ class Utils:
         f"    意志：{user_data['volition']}（当前：{Utils.get_value(uid,'volition')[0]}）\n"\
         f"    智力：{user_data['intelligence']}\n"\
         f"    魅力：{user_data['charm']}\n"\
-        f"    金钱：{user_data['money']}\n"\
+        f"    YP$：{await Utils.get_money(uid)}\n"\
         f"    技能：{skill_text}\n"\
         f"    状态：{state_text}\n"\
         f"    被动次数：{user_data['passive_times']}\n"\
@@ -249,7 +289,7 @@ class Utils:
         
         return Utils.text_to_image(text)
     
-    def refresh_data(uid: str):
+    async def refresh_data(uid: str):
         """更新用户数据
 
         Args:
@@ -434,7 +474,7 @@ class Utils:
             value = 0
         return [value,b]
 
-    def get_attack_list(uid: str,target: str):
+    async def get_attack_list(uid: str,target: str):
         """获取用户对目标造成的伤害
 
         Args:
@@ -445,8 +485,8 @@ class Utils:
             list: 伤害列表
         """
         
-        Utils.refresh_data(uid)
-        Utils.refresh_data(target)
+        await Utils.refresh_data(uid)
+        await Utils.refresh_data(target)
         atk = [[Utils.get_value(uid,'technique')[0],f"{data[uid]['name']}：技巧",False]]
         if i := Utils.get_skill(uid,2):
             atk.append([30 * sqrt(i[2]),f"{data[uid]['name']}：猫化",False])
@@ -524,7 +564,7 @@ class Utils:
             str = "\n" + str
         return str
     
-    def operation_check(uid: str):
+    async def operation_check(uid: str):
         """检测用户是否能够行动
 
         Args:
@@ -535,7 +575,7 @@ class Utils:
         """
         
         oc = ""
-        Utils.refresh_data(uid)
+        await Utils.refresh_data(uid)
         if not Utils.last_operation_time_check(uid):
             oc += "你操作太快了！"
         if Utils.get_state(uid,1) and not Utils.get_skill(uid,9):
@@ -580,7 +620,7 @@ class Utils:
             rr = 0
         return rr
     
-    def gain_item(uid: str,id: int):
+    async def gain_item(uid: str,id: int):
         """用户获得物品
 
         Args:
@@ -676,8 +716,9 @@ class Utils:
                 DHandles.data_set(uid,'charm',data[uid]['charm'] + d)
             elif d == 9:
                 d = Utils.dice(10,139)
-                str += f"1d10 = {d}\n金钱：{data[uid]['money']} → {data[uid]['money'] + d * 1000}"
-                DHandles.data_set(uid,'money',data[uid]['money'] + d * 1000)
+                current_money = await Utils.get_money(uid)
+                new_money = await Utils.add_money(uid, d * 1000)
+                str += f"1d10 = {d}\nYP$：{current_money} → {new_money}"
             elif d == 10:
                 d = Utils.dice(2,1310)
                 str += f"1d10 = {d}\n"
@@ -726,8 +767,9 @@ class Utils:
                     DHandles.data_set(uid,'charm',data[uid]['charm'] + d * si)
                 elif d == 9:
                     d = Utils.dice(100,139)
-                    str += f"1d100 = {d}\n金钱：{data[uid]['money']} → {data[uid]['money'] + d * 1000 * si}"
-                    DHandles.data_set(uid,'money',data[uid]['money'] + d * 1000 * si)
+                    current_money = await Utils.get_money(uid)
+                    new_money = await Utils.add_money(uid, d * 1000 * si)
+                    str += f"1d100 = {d}\nYP$：{current_money} → {new_money}"
         return str
     
     async def get_group_yinpa_list(bid: str,gid: int):

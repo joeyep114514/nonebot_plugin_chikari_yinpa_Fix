@@ -9,6 +9,7 @@ from math import sqrt
 from .data_handles import data,configdata,DHandles
 from .config import Config
 from .utils import Utils
+import nonebot_plugin_chikari_economy as economy
 
 
 def _get_plugin_config():
@@ -58,11 +59,12 @@ class yinpa_Handles():
             DHandles.data_set(uid,"last_sign_in_time",(int)(time() / 86400))
             d_pl = Utils.dice(100,(int)(data[uid]['penis_length']) ^ 1)
             d_vd = Utils.dice(100,(int)(data[uid]['vagina_depth']) ^ 2)
-            d_m = Utils.dice(100,(int)(data[uid]['money']) ^ 3)
-            await matcher.send(f"{data[uid]['name']}签到成功\n长度增加：{data[uid]['penis_length']} + (1d100 / 100) = {data[uid]['penis_length']} + ({d_pl} / 100) = {round(data[uid]['penis_length'] + d_pl / 100,2)}\n深度增加：{data[uid]['vagina_depth']} + (1d100 / 100) = {data[uid]['vagina_depth']} + ({d_vd} / 100) = {round(data[uid]['vagina_depth'] + d_vd / 100,2)}\n金钱增加：{data[uid]['money']} + 1d100 = {data[uid]['money']} + {d_m} = {data[uid]['money'] + d_m}\nps：签到于早上8点刷新")
+            old_money = await Utils.get_money(uid)
+            d_m = Utils.dice(100,(int)(old_money) ^ 3)
+            new_money = await Utils.add_money(uid, d_m)
+            await matcher.send(f"{data[uid]['name']}签到成功\n长度增加：{data[uid]['penis_length']} + (1d100 / 100) = {data[uid]['penis_length']} + ({d_pl} / 100) = {round(data[uid]['penis_length'] + d_pl / 100,2)}\n深度增加：{data[uid]['vagina_depth']} + (1d100 / 100) = {data[uid]['vagina_depth']} + ({d_vd} / 100) = {round(data[uid]['vagina_depth'] + d_vd / 100,2)}\nYP$增加：{old_money} + 1d100 = {old_money} + {d_m} = {new_money}\nps：签到于早上8点刷新")
             DHandles.data_set(uid,'penis_length',round(data[uid]['penis_length'] + d_pl / 100,2))
             DHandles.data_set(uid,'vagina_depth',round(data[uid]['vagina_depth'] + d_vd / 100,2))
-            DHandles.data_set(uid,'money',data[uid]['money'] + d_m)
             await matcher.finish()
         else:
             await matcher.finish("你今天已经打过卡了呢~\nps：签到于早上8点刷新，别问我为什么")
@@ -112,7 +114,6 @@ class yinpa_Handles():
             'volition':min(dicts.species_initial_ability[species][3][0] + Utils.dice(dicts.species_initial_ability[species][3][1],species ^ 7), 90),
             'intelligence':dicts.species_initial_ability[species][4][0] + Utils.dice(dicts.species_initial_ability[species][4][1],species ^ 8),
             'charm':dicts.species_initial_ability[species][5][0] + Utils.dice(dicts.species_initial_ability[species][5][1],species ^ 9),
-            'money':plugin_config.chikari_yinpa_initial_money,
             'state':[],
             "passive_times":0,
             "active_times":0,
@@ -121,6 +122,7 @@ class yinpa_Handles():
             "last_refresh_time":time(),
             "next_work_time":0,
         })
+        await Utils.set_money(uid, plugin_config.chikari_yinpa_initial_money)
         skill = []
         for i in dicts.species_initial_ability[species][6]:
             skill.append([i,0,1])
@@ -129,7 +131,7 @@ class yinpa_Handles():
         obj.update(f"{uid}".encode("utf-8"))
         DHandles.data_set(uid,"md5",obj.hexdigest())
         await matcher.send("成功加入银趴！")
-        await matcher.finish(MessageSegment.image(Utils.get_user_info_image(uid)))
+        await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(uid)))
 
     async def yinpa_leave(
             matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
@@ -248,12 +250,12 @@ class yinpa_Handles():
         if not at or at == ['all']:
             if not data.get(uid):
                 await matcher.finish("错误：你还没加入银趴！")
-            await matcher.finish(MessageSegment.image(Utils.get_user_info_image(uid)))
+                await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(uid)))
         else:
             at = at[0]
             if not data.get(at):
                 await matcher.finish("错误：目标还没加入银趴！")
-            await matcher.finish(MessageSegment.image(Utils.get_user_info_image(at)))
+                await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(at)))
 
     async def yinpa_tou(
             matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
@@ -288,9 +290,9 @@ class yinpa_Handles():
             await matcher.finish("对方还未加入银趴！")
         if uid == at:
             await matcher.finish("你想透自己？请使用 /冲 或 /扣")
-        Utils.refresh_data(uid)
-        Utils.refresh_data(at)
-        oc = Utils.operation_check(uid)
+        await Utils.refresh_data(uid)
+        await Utils.refresh_data(at)
+        oc = await Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
         if Utils.get_state(at,2):
@@ -298,7 +300,7 @@ class yinpa_Handles():
         pl = (int)(data[uid]['penis_length']) * 4
         if pl >= 80:
             pl = 80 + sqrt(pl - 80)
-        atk_u = Utils.get_attack_list(uid,at) + [[pl,f"{data[uid]['name']}：长度",False]]
+        atk_u = await Utils.get_attack_list(uid,at) + [[pl,f"{data[uid]['name']}：长度",False]]
         str_u = f"{data[at]['name']}受到的伤害：1d50"
         for i in atk_u:
             if i[2]:
@@ -337,7 +339,7 @@ class yinpa_Handles():
         vd = (int)(data[at]['vagina_depth']) * 4
         if vd >= 80:
             vd = 80 + sqrt(vd - 80)
-        atk_t = Utils.get_attack_list(at,uid) + [[vd,f"{data[at]['name']}：深度",False]]
+        atk_t = await Utils.get_attack_list(at,uid) + [[vd,f"{data[at]['name']}：深度",False]]
         str_t = f"{data[uid]['name']}受到的伤害：1d50"
         for i in atk_t:
             if i[2]:
@@ -420,9 +422,9 @@ class yinpa_Handles():
             await matcher.finish("对方还未加入银趴！")
         if uid == at:
             await matcher.finish("你想榨自己？请使用 /冲 或 /扣")
-        Utils.refresh_data(uid)
-        Utils.refresh_data(at)
-        oc = Utils.operation_check(uid)
+        await Utils.refresh_data(uid)
+        await Utils.refresh_data(at)
+        oc = await Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
         if Utils.get_state(at,2):
@@ -430,7 +432,7 @@ class yinpa_Handles():
         vd = (int)(data[uid]['vagina_depth']) * 4
         if vd >= 80:
             vd = 80 + sqrt(vd - 80)
-        atk_u = Utils.get_attack_list(uid,at) + [[vd,f"{data[uid]['name']}：深度",False]]
+        atk_u = await Utils.get_attack_list(uid,at) + [[vd,f"{data[uid]['name']}：深度",False]]
         str_u = f"{data[at]['name']}受到的伤害：1d50"
         for i in atk_u:
             if i[2]:
@@ -469,7 +471,7 @@ class yinpa_Handles():
         pl = (int)(data[at]['penis_length']) * 4
         if pl >= 80:
             pl = 80 + sqrt(pl - 80)
-        atk_t = Utils.get_attack_list(at,uid) + [[pl,f"{data[at]['name']}：长度",False]]
+        atk_t = await Utils.get_attack_list(at,uid) + [[pl,f"{data[at]['name']}：长度",False]]
         str_t = f"{data[uid]['name']}受到的伤害：1d50"
         for i in atk_t:
             if i[2]:
@@ -530,10 +532,10 @@ class yinpa_Handles():
         uid: str = event.get_user_id()
         if not Utils.yinpa_user_presence_check(event.get_user_id()):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
-        oc = Utils.operation_check(uid)
+        oc = await Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
-        Utils.refresh_data(uid)
+        await Utils.refresh_data(uid)
         d = Utils.dice(100,uid)
         hp = Utils.get_value(uid,"hp")
         pl_str = f"长度： {data[uid]['penis_length']} → {round(data[uid]['penis_length'] + d / 100 - 0.5,2)}"
@@ -553,10 +555,10 @@ class yinpa_Handles():
         uid: str = event.get_user_id()
         if not Utils.yinpa_user_presence_check(event.get_user_id()):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
-        oc = Utils.operation_check(uid)
+        oc = await Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
-        Utils.refresh_data(uid)
+        await Utils.refresh_data(uid)
         d = Utils.dice(40,uid)
         hp = Utils.get_value(uid,"hp")
         vd_str = f"深度： {data[uid]['vagina_depth']} → {round(data[uid]['vagina_depth'] + d / 100,2)}"
@@ -596,13 +598,14 @@ class yinpa_Handles():
                     i = (list(dicts.shop_dict.keys()))[(list(dicts.shop_dict.values())).index(i)]
                 i = int(i)
                 price += dicts.shop_price_dict[i]
-            if data[uid]['money'] < price:
-                await matcher.finish(f"错误：你的金钱并不够买这些商品！\n这些商品的总售价：{price}\n你的金钱：{data[uid]['money']}")
-            DHandles.data_set(uid,'money',data[uid]['money'] - price)
+            current_money = await Utils.get_money(uid)
+            if current_money < price:
+                await matcher.finish(f"错误：你的 YP$ 并不够买这些商品！\n这些商品的总售价：{price}\n你的 YP$：{current_money}")
+            await Utils.add_money(uid, -price)
             str = ""
             for i in goods:
                 i = int(i)
-                str += Utils.gain_item(uid,i)
+                str += await Utils.gain_item(uid,i)
             await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
 
     async def yinpa_work(
@@ -616,7 +619,7 @@ class yinpa_Handles():
         uid = event.get_user_id()
         if not Utils.yinpa_user_presence_check(event.get_user_id()):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
-        Utils.refresh_data(uid)
+        await Utils.refresh_data(uid)
         command = args.extract_plain_text()
         work_key = command.split()
         if not work_key:
@@ -630,7 +633,7 @@ class yinpa_Handles():
             for i in list(dicts.work_dict.keys()):
                 str += f"{i}：{dicts.work_dict[i]}"
             await matcher.finish("错误：该工作不存在\n可用工作：\n" + str + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")
-        oc = Utils.operation_check(uid)
+        oc = await Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
         if DHandles.work_cooldown_get(uid) >= time():
@@ -707,7 +710,7 @@ class yinpa_Handles():
                 if d >= 1 and d <= 1:
                     l = list(dicts.shop_dict.keys())
                     i = Utils.dice(len(l),(int)(uid) ^ 105)
-                    str += Utils.gain_item(uid,l[i - 1])
+                    str += await Utils.gain_item(uid,l[i - 1])
                 elif d >= 2 and d <= 4:
                     l = list(dicts.state_dict.keys())
                     i = Utils.dice(len(l),(int)(uid) ^ 106)
@@ -743,7 +746,7 @@ class yinpa_Handles():
                     d = Utils.dice(86400,(int)(uid) ^ 107)
                     str += DHandles.skill_refresh(uid,l[i - 1],level = 1,mode = 'add')
         DHandles.work_cooldown_set(uid,(time() + 3600))
-        DHandles.data_set(uid,"money",data[uid]["money"] + money)
+        await Utils.add_money(uid, money)
         str += "一小时内你将无法继续工作"
         await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
 
@@ -786,11 +789,12 @@ class yinpa_Handles():
             await matcher.finish("对方还未加入银趴！")
         if uid == target:
             await matcher.finish("你不能给自己转账！")
-        if data[uid]['money'] < amount:
-            await matcher.finish(f"错误：你的金钱不够！\n需要：{amount}\n你的金钱：{data[uid]['money']}")
-        DHandles.data_set(uid,'money',data[uid]['money'] - amount)
-        DHandles.data_set(target,'money',data[target]['money'] + amount)
-        await matcher.finish(f"转账{amount}给{data[target]['name']}成功，现在你的余额是{round(data[uid]['money'],2)}")
+        current_money = await Utils.get_money(uid)
+        if current_money < amount:
+            await matcher.finish(f"错误：你的 YP$ 不够！\n需要：{amount}\n你的 YP$：{current_money}")
+        await Utils.add_money(uid, -amount)
+        await Utils.add_money(target, amount)
+        await matcher.finish(f"转账{amount}给{data[target]['name']}成功，现在你的余额是{await Utils.get_money(uid)}")
 
     # async def test(
     #     matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
