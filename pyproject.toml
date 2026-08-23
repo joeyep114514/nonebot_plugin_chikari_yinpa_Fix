@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-chikari-yinpa-fix"
-version = "1.5.1"
+version = "1.5.1.1"
 description = "NoneBot2 银趴插件（修复版）"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -13,7 +13,7 @@ dependencies = [
     "nonebot2>=2.0.0",
     "nonebot-adapter-onebot",
     "nonebot-plugin-localstore",
-    "nonebot-plugin-chikari-economy>=0.0.8",
+    "nonebot-plugin-chikari-economy-with-yinpa>=0.0.1",
     "nonebot-plugin-orm",
 ]
 keywords = ["nonebot", "plugin", "chikari", "yinpa", "fix"]
