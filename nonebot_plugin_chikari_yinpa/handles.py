@@ -62,7 +62,7 @@ class yinpa_Handles():
             old_money = await Utils.get_money(uid)
             d_m = Utils.dice(100,(int)(old_money) ^ 3)
             new_money = await Utils.add_money(uid, d_m)
-            await matcher.send(f"{data[uid]['name']}签到成功\n长度增加：{data[uid]['penis_length']} + (1d100 / 100) = {data[uid]['penis_length']} + ({d_pl} / 100) = {round(data[uid]['penis_length'] + d_pl / 100,2)}\n深度增加：{data[uid]['vagina_depth']} + (1d100 / 100) = {data[uid]['vagina_depth']} + ({d_vd} / 100) = {round(data[uid]['vagina_depth'] + d_vd / 100,2)}\nYP$增加：{old_money} + 1d100 = {old_money} + {d_m} = {new_money}\nps：签到于早上8点刷新")
+            await matcher.send(f"{data[uid]['name']}签到成功\n长度增加：{data[uid]['penis_length']} + (1d100 / 100) = {data[uid]['penis_length']} + ({d_pl} / 100) = {round(data[uid]['penis_length'] + d_pl / 100,2)}\n深度增加：{data[uid]['vagina_depth']} + (1d100 / 100) = {data[uid]['vagina_depth']} + ({d_vd} / 100) = {round(data[uid]['vagina_depth'] + d_vd / 100,2)}\nYPD增加：{old_money} + 1d100 = {old_money} + {d_m} = {new_money}\nps：签到于早上8点刷新")
             DHandles.data_set(uid,'penis_length',round(data[uid]['penis_length'] + d_pl / 100,2))
             DHandles.data_set(uid,'vagina_depth',round(data[uid]['vagina_depth'] + d_vd / 100,2))
             await matcher.finish()
@@ -600,7 +600,7 @@ class yinpa_Handles():
                 price += dicts.shop_price_dict[i]
             current_money = await Utils.get_money(uid)
             if current_money < price:
-                await matcher.finish(f"错误：你的 YP$ 并不够买这些商品！\n这些商品的总售价：{price}\n你的 YP$：{current_money}")
+                await matcher.finish(f"错误：你的 YPD 并不够买这些商品！\n这些商品的总售价：{price}\n你的 YPD：{current_money}")
             await Utils.add_money(uid, -price)
             str = ""
             for i in goods:
@@ -791,7 +791,7 @@ class yinpa_Handles():
             await matcher.finish("你不能给自己转账！")
         current_money = await Utils.get_money(uid)
         if current_money < amount:
-            await matcher.finish(f"错误：你的 YP$ 不够！\n需要：{amount}\n你的 YP$：{current_money}")
+            await matcher.finish(f"错误：你的 YPD 不够！\n需要：{amount}\n你的 YPD：{current_money}")
         await Utils.add_money(uid, -amount)
         await Utils.add_money(target, amount)
         await matcher.finish(f"转账{amount}给{data[target]['name']}成功，现在你的余额是{await Utils.get_money(uid)}")

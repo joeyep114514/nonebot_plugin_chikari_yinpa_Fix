@@ -245,7 +245,7 @@ class dicts():
         "volition":"意志",
         "intelligence":"智力",
         "charm":"魅力",
-        "money":"YP$",
+        "money":"YPD",
         "skill":"技能[ID,附加数据]",
         "state":"状态[ID,结束时间]",
         "passive_times":"被动次数",

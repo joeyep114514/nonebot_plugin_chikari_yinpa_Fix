@@ -165,42 +165,42 @@ class Utils:
 
     @staticmethod
     async def get_money(uid: str) -> float:
-        """获取用户的 YP$ 数量
+        """获取用户的 YPD 数量
 
         Args:
             uid (str): 用户id
 
         Returns:
-            float: YP$ 数量
+            float: YPD 数量
         """
-        return await economy.get_user_money(uid, "yp")
+        return await economy.inquire_money(uid, "YPD")
 
     @staticmethod
     async def set_money(uid: str, value: float) -> float:
-        """设置用户的 YP$ 数量
+        """设置用户的 YPD 数量
 
         Args:
             uid (str): 用户id
-            value (float): YP$ 数量
+            value (float): YPD 数量
 
         Returns:
-            float: 设置后的 YP$ 数量
+            float: 设置后的 YPD 数量
         """
-        await economy.set_money(uid, "yp", value)
+        await economy.set_money(uid, "YPD", value)
         return value
 
     @staticmethod
     async def add_money(uid: str, value: float) -> float:
-        """增加/减少用户的 YP$ 数量
+        """增加/减少用户的 YPD 数量
 
         Args:
             uid (str): 用户id
             value (float): 变化量（负数为减少）
 
         Returns:
-            float: 变化后的 YP$ 数量
+            float: 变化后的 YPD 数量
         """
-        return await economy.add_money(uid, "yp", value)
+        return await economy.add_money(uid, "YPD", value)
     
     def text_to_image(text: str):
         """文字转图片
@@ -281,7 +281,7 @@ class Utils:
         f"    意志：{user_data['volition']}（当前：{Utils.get_value(uid,'volition')[0]}）\n"\
         f"    智力：{user_data['intelligence']}\n"\
         f"    魅力：{user_data['charm']}\n"\
-        f"    YP$：{await Utils.get_money(uid)}\n"\
+        f"    YPD：{await Utils.get_money(uid)}\n"\
         f"    技能：{skill_text}\n"\
         f"    状态：{state_text}\n"\
         f"    被动次数：{user_data['passive_times']}\n"\
@@ -718,7 +718,7 @@ class Utils:
                 d = Utils.dice(10,139)
                 current_money = await Utils.get_money(uid)
                 new_money = await Utils.add_money(uid, d * 1000)
-                str += f"1d10 = {d}\nYP$：{current_money} → {new_money}"
+                str += f"1d10 = {d}\nYPD：{current_money} → {new_money}"
             elif d == 10:
                 d = Utils.dice(2,1310)
                 str += f"1d10 = {d}\n"
@@ -769,7 +769,7 @@ class Utils:
                     d = Utils.dice(100,139)
                     current_money = await Utils.get_money(uid)
                     new_money = await Utils.add_money(uid, d * 1000 * si)
-                    str += f"1d100 = {d}\nYP$：{current_money} → {new_money}"
+                    str += f"1d100 = {d}\nYPD：{current_money} → {new_money}"
         return str
     
     async def get_group_yinpa_list(bid: str,gid: int):

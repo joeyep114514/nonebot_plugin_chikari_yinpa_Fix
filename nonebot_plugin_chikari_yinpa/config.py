@@ -10,9 +10,9 @@ class Config(BaseModel):
     chikari_yinpa_initial_vagina_depth: Optional[int] = 10
     """初始深度。默认：10"""
     chikari_yinpa_initial_money: Optional[int] = 100
-    """初始 YP$。默认：100"""
+    """初始 YPD。默认：100"""
     chikari_yinpa_transfer_unlock_money: Optional[int] = 10000
-    """转账功能解锁所需 YP$。默认：10000"""
+    """转账功能解锁所需 YPD。默认：10000"""
     chikari_yinpa_transfer_cooldown: Optional[int] = 3600
     """转账冷却时间（秒）。默认：3600（1小时）"""
     chikari_yinpa_font:Path = Path(__file__).parent / "resource" / "NotoSansCJKsc-VF.ttf"
