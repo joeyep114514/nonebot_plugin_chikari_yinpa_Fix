@@ -13,7 +13,7 @@ dependencies = [
     "nonebot2>=2.0.0",
     "nonebot-adapter-onebot",
     "nonebot-plugin-localstore",
-    "nonebot-plugin-chikari-economy-with-yinpa>=0.0.1",
+    "nonebot-plugin-value>=1.0.0",
     "nonebot-plugin-orm",
 ]
 keywords = ["nonebot", "plugin", "chikari", "yinpa", "fix"]

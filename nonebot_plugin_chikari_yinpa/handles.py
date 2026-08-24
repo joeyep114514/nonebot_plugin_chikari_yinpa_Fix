@@ -9,7 +9,6 @@ from math import sqrt
 from .data_handles import data,configdata,DHandles
 from .config import Config
 from .utils import Utils
-import nonebot_plugin_chikari_economy_with_yinpa as economy
 
 
 def _get_plugin_config():

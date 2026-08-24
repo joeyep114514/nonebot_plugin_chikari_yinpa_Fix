@@ -12,7 +12,7 @@ from pathlib import Path
 from .data_handles import data,configdata,DHandles
 from .dicts import dicts
 from .config import Config
-import nonebot_plugin_chikari_economy_with_yinpa as economy
+from nonebot_plugin_value.api import api_balance
 
 
 def _get_plugin_config():
@@ -173,7 +173,8 @@ class Utils:
         Returns:
             float: YPD 数量
         """
-        return await economy.get_user_money(uid, "YPD")
+        account = await api_balance.get_or_create_account(uid, "YPD")
+        return account.balance
 
     @staticmethod
     async def set_money(uid: str, value: float) -> float:
@@ -186,7 +187,12 @@ class Utils:
         Returns:
             float: 设置后的 YPD 数量
         """
-        await economy.set_money(uid, "YPD", value)
+        account = await api_balance.get_or_create_account(uid, "YPD")
+        diff = value - account.balance
+        if diff > 0:
+            await api_balance.add_balance(uid, diff, "yinpa_set", "YPD")
+        elif diff < 0:
+            await api_balance.del_balance(uid, -diff, "yinpa_set", "YPD")
         return value
 
     @staticmethod
@@ -200,7 +206,12 @@ class Utils:
         Returns:
             float: 变化后的 YPD 数量
         """
-        return await economy.add_money(uid, "YPD", value)
+        if value > 0:
+            await api_balance.add_balance(uid, value, "yinpa_add", "YPD")
+        elif value < 0:
+            await api_balance.del_balance(uid, -value, "yinpa_del", "YPD")
+        account = await api_balance.get_or_create_account(uid, "YPD")
+        return account.balance
     
     def text_to_image(text: str):
         """文字转图片
