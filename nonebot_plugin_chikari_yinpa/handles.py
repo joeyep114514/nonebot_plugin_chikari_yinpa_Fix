@@ -249,12 +249,12 @@ class yinpa_Handles():
         if not at or at == ['all']:
             if not data.get(uid):
                 await matcher.finish("错误：你还没加入银趴！")
-                await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(uid)))
+            await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(uid)))
         else:
             at = at[0]
             if not data.get(at):
                 await matcher.finish("错误：目标还没加入银趴！")
-                await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(at)))
+            await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(at)))
 
     async def yinpa_tou(
             matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
