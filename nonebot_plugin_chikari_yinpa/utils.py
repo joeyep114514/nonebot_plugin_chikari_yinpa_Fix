@@ -12,7 +12,7 @@ from pathlib import Path
 from .data_handles import data,configdata,DHandles
 from .dicts import dicts
 from .config import Config
-import nonebot_plugin_chikari_economy as economy
+import nonebot_plugin_chikari_economy_with_yinpa as economy
 
 
 def _get_plugin_config():
@@ -173,7 +173,7 @@ class Utils:
         Returns:
             float: YPD 数量
         """
-        return await economy.inquire_money(uid, "YPD")
+        return await economy.get_user_money(uid, "YPD")
 
     @staticmethod
     async def set_money(uid: str, value: float) -> float:

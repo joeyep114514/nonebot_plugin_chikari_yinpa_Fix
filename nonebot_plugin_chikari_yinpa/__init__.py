@@ -1,6 +1,6 @@
 from nonebot import get_driver, on_command, require
 require("nonebot_plugin_localstore")
-require("nonebot_plugin_chikari_economy")
+require("nonebot_plugin_chikari_economy_with_yinpa")
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.permission import SUPERUSER
 
@@ -8,7 +8,7 @@ from nonebot.plugin import PluginMetadata
 
 from .config import Config
 from .handles import yinpa_Handles
-from nonebot_plugin_chikari_economy import def_money_type
+from nonebot_plugin_chikari_economy_with_yinpa import def_money_type
 
 
 @get_driver().on_startup
