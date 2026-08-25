@@ -1,13 +1,14 @@
-from nonebot import get_driver, on_command, require
+from nonebot import get_driver, on_command, require, on_message
 require("nonebot_plugin_localstore")
 require("nonebot_plugin_value")
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.permission import SUPERUSER
+from nonebot.rule import Rule
 
 from nonebot.plugin import PluginMetadata
 
 from .config import Config
-from .handles import yinpa_Handles
+from .handles import yinpa_Handles, _join_pending_rule
 from nonebot_plugin_value.api.api_currency import get_or_create_currency
 from nonebot_plugin_value.pyd_models.currency_pyd import CurrencyData
 
@@ -26,7 +27,7 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={"~onebot.v11"}
 )
 
-__version__ = "1.4.13"
+__version__ = "1.5.1.6"
 
 on_yinpa_control = on_command(
     "yinpa_control",
@@ -67,6 +68,15 @@ on_yinpa_join = on_command(
     priority=10,
     block=False,
     handlers=[yinpa_Handles.yinpa_join]
+)
+
+# 接管创建流程中的普通消息（选择种族 / 分配属性点）
+# 优先级置于命令之后（数值更大），确保诸如 /yinpa_join 重启等命令优先处理
+on_yinpa_join_step = on_message(
+    rule=Rule(_join_pending_rule),
+    priority=1000,
+    block=True,
+    handlers=[yinpa_Handles.yinpa_join_step]
 )
 
 on_yinpa_leave = on_command(
