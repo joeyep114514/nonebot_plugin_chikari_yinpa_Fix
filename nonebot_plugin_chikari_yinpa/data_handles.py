@@ -4,6 +4,18 @@ import os
 from pathlib import Path
 from time import time
 from .dicts import dicts
+from .config import Config
+try:
+    from nonebot import get_plugin_config
+except Exception:
+    def get_plugin_config(cls):
+        return cls()
+
+def _get_plugin_config():
+    try:
+        return get_plugin_config(Config)
+    except Exception:
+        return Config()
 try:
     import nonebot_plugin_localstore as store
 except ImportError:
@@ -115,6 +127,50 @@ class DHandles():
         
         global data
         data[uid] = dict
+        data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
+        data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
+        DHandles.file_save()
+        return
+
+    def user_add_with_points(uid: str,name: str,species: int,pts: list):
+        """按种族模板 + 自由属性点创建角色
+
+        Args:
+            uid (str): 用户id
+            name (str): 昵称
+            species (int): 种族id
+            pts (list): 六项自由点投入 [力量, 体质, 技巧, 意志, 智力, 魅力]
+        """
+        
+        spec = dicts.species_initial_ability[species]
+        rate = dicts.attribute_order["rate"]
+        keys = dicts.attribute_order["keys"]
+        final = {}
+        for i in range(6):
+            inc = int(pts[i] * rate[i])  # 体质/意志 2:1（配合偶数校验后无小数）
+            final[keys[i]] = min(spec["base"][i] + inc, spec["cap"][i])
+        plugin_config = _get_plugin_config()
+        global data
+        data[uid] = {
+            'name':name,
+            'species':species,
+            'sex_value':plugin_config.chikari_yinpa_initial_sex_value,
+            'penis_length':plugin_config.chikari_yinpa_initial_penis_length,
+            'vagina_depth':plugin_config.chikari_yinpa_initial_vagina_depth,
+            'strength':final["strength"],
+            'constitution':final["constitution"],
+            'technique':final["technique"],
+            'volition':final["volition"],
+            'intelligence':final["intelligence"],
+            'charm':final["charm"],
+            'state':[],
+            "passive_times":0,
+            "active_times":0,
+            "last_sign_in_time":0,
+            "last_operation_time":0,
+            "last_refresh_time":time(),
+            "next_work_time":0,
+        }
         data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
         data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
         DHandles.file_save()

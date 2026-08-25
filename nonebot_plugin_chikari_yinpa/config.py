@@ -11,6 +11,14 @@ class Config(BaseModel):
     """初始深度。默认：10"""
     chikari_yinpa_initial_money: Optional[int] = 100
     """初始 YPD。默认：100"""
+    chikari_yinpa_initial_free_points: Optional[int] = 180
+    """普通种族初始自由属性点。默认：180"""
+    chikari_yinpa_human_bonus_points: Optional[int] = 40
+    """人类额外自由属性点（人类 = 180 + 40 = 220）。默认：40"""
+    chikari_yinpa_constitution_volition_ratio: Optional[int] = 2
+    """体质/意志兑换率（每 2 点换 1 属性）。默认：2"""
+    chikari_yinpa_join_timeout: Optional[int] = 600
+    """加入银趴创建流程超时时间（秒）。默认：600"""
     chikari_yinpa_transfer_unlock_money: Optional[int] = 10000
     """转账功能解锁所需 YPD。默认：10000"""
     chikari_yinpa_transfer_cooldown: Optional[int] = 3600
