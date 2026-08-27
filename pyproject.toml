@@ -1,29 +1,29 @@
 [project]
 name = "nonebot-plugin-chikari-yinpa-fix"
-version = "1.5.1.6"
+version = "1.5.1.7"
 description = "NoneBot2 银趴插件（修复版）"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = "MIT"
 authors = [
     {name = "fjcdhc", email = "joeyep114514@outlook.com"}
 ]
 dependencies = [
-    "Pillow",
-    "nonebot2>=2.0.0",
-    "nonebot-adapter-onebot",
-    "nonebot-plugin-localstore",
+    "Pillow>=9.0.0",
+    "nonebot2>=2.3.0",
+    "nonebot-adapter-onebot>=2.4.0",
+    "nonebot-plugin-localstore>=0.7.0",
     "nonebot-plugin-value>=1.0.0",
-    "nonebot-plugin-orm",
+    "nonebot-plugin-orm>=0.4.0",
 ]
 keywords = ["nonebot", "plugin", "chikari", "yinpa", "fix"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
 ]
 

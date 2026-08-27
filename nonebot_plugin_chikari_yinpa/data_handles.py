@@ -21,20 +21,20 @@ try:
 except ImportError:
     class _FallbackStore:
         @staticmethod
-        def get_data_file(name, filename):
+        def get_plugin_data_file(filename):
             base = Path(__file__).resolve().parent / "data"
             base.mkdir(parents=True, exist_ok=True)
             return base / filename
 
         @staticmethod
-        def get_config_file(name, filename):
+        def get_plugin_config_file(filename):
             base = Path(__file__).resolve().parent / "data"
             base.mkdir(parents=True, exist_ok=True)
             return base / filename
     store = _FallbackStore()
 
-plugin_data_file: Path = store.get_data_file("chikari_yinpa", "data.json")
-plugin_config_file: Path = store.get_config_file("chikari_yinpa", "config.json")
+plugin_data_file: Path = store.get_plugin_data_file("data.json")
+plugin_config_file: Path = store.get_plugin_config_file("config.json")
 plugin_data_file.parent.mkdir(parents=True, exist_ok=True)
 plugin_config_file.parent.mkdir(parents=True, exist_ok=True)
 

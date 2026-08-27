@@ -1,5 +1,5 @@
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
-from nonebot import get_plugin_config,get_bots
+from nonebot import get_bots
 
 import json
 from random import randint,seed,choice
@@ -11,15 +11,8 @@ from pathlib import Path
 
 from .data_handles import data,configdata,DHandles
 from .dicts import dicts
-from .config import Config
+from .config import plugin_config
 from nonebot_plugin_value.api import api_balance
-
-
-def _get_plugin_config():
-    try:
-        return get_plugin_config(Config)
-    except Exception:
-        return Config()
 
 class Utils:
     @staticmethod
@@ -34,7 +27,6 @@ class Utils:
 
     @staticmethod
     def _load_fonts(font_size: int):
-        plugin_config = _get_plugin_config()
         main_font = ImageFont.truetype(plugin_config.chikari_yinpa_font, font_size)
         # 修复可变字体默认字重过细的问题：
         # NotoSansCJKsc-VF.ttf 的 wght 轴默认值为 100（Thin），直接加载会渲染成极细字体，

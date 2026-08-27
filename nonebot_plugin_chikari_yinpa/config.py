@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from pathlib import Path
+from nonebot import get_plugin_config
 
 class Config(BaseModel):
     chikari_yinpa_initial_sex_value: Optional[int] = 50
@@ -27,3 +28,8 @@ class Config(BaseModel):
     """绘图所用主字体。默认：'模块路径/resource/NotoSansCJKsc-VF.ttf'"""
     chikari_yinpa_emoji_font:Path = Path(__file__).parent / "resource" / "NotoEmoji.ttf"
     """绘图所用 Emoji 字体。默认：'模块路径/resource/NotoEmoji.ttf'"""
+
+try:
+    plugin_config = get_plugin_config(Config)
+except Exception:
+    plugin_config = Config()

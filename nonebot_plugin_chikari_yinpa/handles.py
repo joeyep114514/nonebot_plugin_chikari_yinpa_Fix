@@ -1,22 +1,16 @@
 from nonebot.adapters.onebot.v11 import GroupMessageEvent,Message,MessageSegment
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg
-from nonebot import get_plugin_config,get_bots
+from nonebot import get_bots
 from time import time
 from hashlib import md5
 from math import sqrt
 import random
 
 from .data_handles import data,configdata,DHandles
-from .config import Config
+from .config import plugin_config
 from .utils import Utils
 
-
-def _get_plugin_config():
-    try:
-        return get_plugin_config(Config)
-    except Exception:
-        return Config()
 
 from .dicts import dicts
 
