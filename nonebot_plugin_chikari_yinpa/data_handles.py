@@ -38,6 +38,24 @@ plugin_config_file: Path = store.get_plugin_config_file("config.json")
 plugin_data_file.parent.mkdir(parents=True, exist_ok=True)
 plugin_config_file.parent.mkdir(parents=True, exist_ok=True)
 
+def _load_json_with_recovery(path: Path, default_factory):
+    """加载数据文件；若文件损坏（写入中途崩溃等），备份后重置，避免插件整体加载失败
+
+    Args:
+        path (Path): 数据文件路径
+        default_factory: 生成默认数据的工厂
+
+    Returns:
+        dict: 加载（或重置）后的数据
+    """
+    try:
+        return json.loads(path.read_text(encoding='utf-8'), strict=False)
+    except ValueError:
+        backup = path.parent / (path.name + f".corrupt.{int(time())}")
+        path.replace(backup)
+        print(f"[Chikari_Yinpa] 数据文件损坏，已备份至 {backup} 并重置为默认数据")
+        return default_factory()
+
 #用户数据文件初始化及载入
 
 if not plugin_data_file.exists() or plugin_data_file.stat().st_size == 0:
@@ -45,7 +63,7 @@ if not plugin_data_file.exists() or plugin_data_file.stat().st_size == 0:
     plugin_data_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
     data = init_data
 else:
-    data = json.loads(plugin_data_file.read_text(encoding='utf-8'), strict=False)
+    data = _load_json_with_recovery(plugin_data_file, dict)
 
 if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
     data["_work_cooldown"] = {}
@@ -59,11 +77,13 @@ if not plugin_config_file.exists() or plugin_config_file.stat().st_size == 0:
     plugin_config_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
     configdata = init_data
 else:
-    configdata = json.loads(plugin_config_file.read_text(encoding='utf-8'), strict=False)
+    configdata = _load_json_with_recovery(plugin_config_file, lambda: {"yinpa_enabled_group":[]})
+    if not isinstance(configdata.get("yinpa_enabled_group"), list):
+        configdata["yinpa_enabled_group"] = []
 
 
 def _ship_hp_bonus(uid: str):
-    """舰装血量上限加成 200×√(等级)（舰装未破损时生效）
+    """舰装血量上限加成 100×√(等级)（舰装未破损时生效）
 
     Args:
         uid (str): 用户id
@@ -86,17 +106,16 @@ class DHandles():
     """数据处理"""
     
     def file_save():
-        """将内存中的数据保存至文件
+        """将内存中的数据保存至文件（临时文件 + 原子替换，避免写入中途崩溃损坏数据文件）
         """
         
         global data
         global configdata
-        f = open(plugin_data_file,'w')
-        json.dump(data,f,indent=4)
-        f.close()
-        f = open(plugin_config_file,'w')
-        json.dump(configdata,f,indent=4)
-        f.close()
+        for path, payload in ((plugin_data_file, data), (plugin_config_file, configdata)):
+            tmp = path.parent / (path.name + ".tmp")
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, indent=4, ensure_ascii=False)
+            os.replace(tmp, path)
 
     def data_set(uid: str,key: str,value):
         """设置特定用户的特定数值

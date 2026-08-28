@@ -518,7 +518,7 @@ class Utils:
     def get_hp_bonus(uid: str):
         """舰装血量上限加成
 
-        舰装未破损时，意志HP与体质HP上限各增加 200×√(等级)。
+        舰装未破损时，意志HP与体质HP上限各增加 100×√(等级)。
 
         Args:
             uid (str): 用户id
@@ -695,8 +695,8 @@ class Utils:
                     DHandles.state_refresh(uid,2,time() + d * 3600)
                     DHandles.achievement_set(uid,"A04")
                     str += f" >= {con}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
-                    if Utils.boat(uid):
-                        DHandles.skill_refresh(uid,6,time() + 259200)
+                    if bt := Utils.boat(uid):
+                        DHandles.skill_refresh(uid,6,time() + 259200,level = bt[2])
                         str += f"\n{data[uid]['name']}的舰装破损了！将进入三天的冷却。"
                 else:
                     d = Utils.dice(con,(int)(uid) ^ 15)
@@ -832,7 +832,8 @@ class Utils:
         elif id == 7:
             str += DHandles.skill_refresh(uid,5,level = 1,mode = 'add')
         elif id == 8:
-            str += DHandles.skill_refresh(uid,6,level = 1,mode = 'add')
+            cur = next((s for s in data[uid]["skill"] if s[0] == 6), None)
+            str += DHandles.skill_refresh(uid,6,cur[1] if cur else None,level = 1,mode = 'add')
         elif id == 9:
             str += DHandles.skill_refresh(uid,7,level = 1,mode = 'add')
         elif id == 10:
@@ -844,8 +845,8 @@ class Utils:
             str += DHandles.skill_refresh(uid,9,level = 1,mode = 'add')
             DHandles.achievement_set(uid,"D04")
         elif id == 12:
-            data[uid]["skill"] = [i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15,]]
-            str += "已清除所有诅咒"
+            DHandles.data_set(uid,"skill",[i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15]])
+            str += "已清除所有诅咒\n"
         elif id == 13:
             d = Utils.dice(10,13)
             pool = [i for i in range(2,16)]
@@ -853,7 +854,8 @@ class Utils:
                 pool.remove(9)
             sk = choice(pool)
             str += f"1d10 = {d}\n"
-            str += DHandles.skill_refresh(uid,sk,level = 5 + d,mode = 'add')
+            cur = next((s for s in data[uid]["skill"] if s[0] == sk), None)
+            str += DHandles.skill_refresh(uid,sk,cur[1] if cur else None,level = 5 + d,mode = 'add')
             DHandles.data_set(uid,'pandora_count',data[uid].get('pandora_count',0) + 1)
         elif id == 14:
             DHandles.data_set(uid,'d10_count',data[uid].get('d10_count',0) + 1)

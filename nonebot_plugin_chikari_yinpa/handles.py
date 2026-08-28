@@ -374,7 +374,7 @@ class yinpa_Handles():
         elif help_key[0] == 'species':
             if len(help_key) >= 2 and dicts.species_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.species_dict.get(int(help_key[1])):
+            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.species_dict.get(int(help_key[1])):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[dicts.species_dict[int(help_key[1])]])))
             else:
                 str = ""
@@ -384,7 +384,7 @@ class yinpa_Handles():
         elif help_key[0] == "skill":
             if len(help_key) >= 2 and dicts.skill_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.skill_dict.get(int(help_key[1])):
+            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.skill_dict.get(int(help_key[1])):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[dicts.skill_dict[int(help_key[1])]])))
             else:
                 str = ""
@@ -394,7 +394,7 @@ class yinpa_Handles():
         elif help_key[0] == 'state':
             if len(help_key) >= 2 and dicts.state_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.state_dict.get(int(help_key[1])):
+            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.state_dict.get(int(help_key[1])):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[dicts.state_dict[int(help_key[1])]])))
             else:
                 str = ""
@@ -404,7 +404,7 @@ class yinpa_Handles():
         elif help_key[0] == "shop":
             if len(help_key) >= 2 and dicts.shop_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.shop_dict.get(int(help_key[1])):
+            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.shop_dict.get(int(help_key[1])):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[dicts.shop_dict[int(help_key[1])]])))
             else:
                 str = ""
@@ -414,7 +414,7 @@ class yinpa_Handles():
         elif help_key[0] == "work":
             if len(help_key) >= 2 and dicts.work_dict.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.work_dict.get(int(help_key[1])):
+            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.work_dict.get(int(help_key[1])):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[dicts.work_dict[int(help_key[1])]])))
             else:
                 str = ""
@@ -791,25 +791,32 @@ class yinpa_Handles():
             await matcher.finish(MessageSegment.image(Utils.text_to_image("可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
         else:
             goods = shop_key
+            resolved = []
             price = 0
             for i in goods:
-                if not dicts.shop_dict.get(i) and not dicts.shop_help.get(i) and not dicts.shop_dict.get(int(i)):
+                rid = None
+                if i in list(dicts.shop_dict.values()):
+                    rid = (list(dicts.shop_dict.keys()))[(list(dicts.shop_dict.values())).index(i)]
+                elif i.isdigit():
+                    rid = int(i)
+                    if not dicts.shop_dict.get(rid):
+                        rid = None
+                if rid is None:
                     str = ""
                     for j in list(dicts.shop_dict.keys()):
                         str += f"{j}：{dicts.shop_dict[j]} 售价：{dicts.shop_price_dict[j]}\n"
                     await matcher.finish(MessageSegment.image(Utils.text_to_image("错误：该商品不存在\n可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
-                if i in list(dicts.shop_dict.values()):
-                    i = (list(dicts.shop_dict.keys()))[(list(dicts.shop_dict.values())).index(i)]
-                i = int(i)
-                price += dicts.shop_price_dict[i]
+                price += dicts.shop_price_dict[rid]
+                resolved.append(rid)
+            if 11 in resolved and Utils.get_skill(uid,9):
+                await matcher.finish("错误：你已经拥有【屹立不倒】，不能重复购买！")
             current_money = await Utils.get_money(uid)
             if current_money < price:
                 await matcher.finish(f"错误：你的 YPD 并不够买这些商品！\n这些商品的总售价：{price}\n你的 YPD：{current_money}")
             await Utils.add_money(uid, -price)
             str = ""
-            for i in goods:
-                i = int(i)
-                str += await Utils.gain_item(uid,i)
+            for rid in resolved:
+                str += await Utils.gain_item(uid,rid)
             await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
 
     async def yinpa_work(
