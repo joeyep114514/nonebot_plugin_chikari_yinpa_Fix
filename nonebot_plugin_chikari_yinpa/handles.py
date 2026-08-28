@@ -150,7 +150,6 @@ class yinpa_Handles():
         
         spec = dicts.species_initial_ability[species]
         base = spec["base"]
-        cap = spec["cap"]
         free = spec["free_pts"]
         spname = dicts.species_dict[species]
         return (f"您选择了【{spname}】。\n\n"
@@ -162,11 +161,11 @@ class yinpa_Handles():
                 "智力  —— 影响自然之心/舰装等技能强度，与直播/写文收益相关\n"
                 "魅力  —— 影响直播/援交收益，并可压制对手\n\n"
                 "属性上限(所有种族一致)：\n"
-                f"力量{cap[0]} 体质{cap[1]} 技巧{cap[2]} 意志{cap[3]} 智力{cap[4]} 魅力{cap[5]}\n\n"
+                "力量无上限 体质80 技巧无上限 意志80 智力无上限 魅力无上限\n\n"
                 "种族基础属性：您当前各项起始值为\n"
                 f"力量{base[0]}  体质{base[1]}  技巧{base[2]}\n"
                 f"意志{base[3]}  智力{base[4]}  魅力{base[5]}\n"
-                "(基础属性由种族决定，加点是在此之上继续累加，最终属性 = 基础属性 + 加点增量，不能超过上限)\n\n"
+                "(基础属性由种族决定，加点是在此之上继续累加，最终属性 = 基础属性 + 加点增量，仅体质与意志不能超过80，其余属性无上限)\n\n"
                 f"您获得自由属性点 {free}。\n"
                 "分配逻辑：1自由属性点可兑换\n"
                 "    +1  力量/技巧/智力/魅力 ；\n"
@@ -233,7 +232,7 @@ class yinpa_Handles():
             return f"六项点数之和（{sum(parts)}）超过自由属性点上限（{free}）"
         for i in range(6):
             inc = parts[i] if rate[i] == 1 else int(parts[i] * rate[i])
-            if base[i] + inc > cap[i]:
+            if cap[i] is not None and base[i] + inc > cap[i]:
                 return f"「{names[i]}」分配过多：基础{base[i]} + 增量{inc} 超过属性上限{cap[i]}"
         return parts
 
@@ -262,7 +261,7 @@ class yinpa_Handles():
                 step = 1 if cost[i] == 1 else 2
                 if cost[i] > remaining:
                     continue
-                if base[i] + (pts[i] + step) * rate[i] <= cap[i]:
+                if cap[i] is None or base[i] + (pts[i] + step) * rate[i] <= cap[i]:
                     cand.append(i)
             if not cand:
                 break
