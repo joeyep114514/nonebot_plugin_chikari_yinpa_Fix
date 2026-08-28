@@ -1025,9 +1025,6 @@ class yinpa_Handles():
         current_money = await Utils.get_money(uid)
         if current_money < amount:
             await matcher.finish(f"错误：你的 YPD 不够！\n需要：{amount}\n你的 YPD：{current_money}")
-        unlock_money = plugin_config.chikari_yinpa_transfer_unlock_money
-        if current_money < unlock_money:
-            await matcher.finish(f"错误：转账功能未解锁！\n需要余额达到 {unlock_money} YPD 才能使用转账\n你的 YPD：{current_money}")
         await Utils.add_money(uid, -amount)
         await Utils.add_money(target, amount)
         await matcher.finish(f"转账{amount}给{data[target]['name']}成功，现在你的余额是{await Utils.get_money(uid)}")
