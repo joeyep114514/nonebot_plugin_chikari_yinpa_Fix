@@ -1028,13 +1028,8 @@ class yinpa_Handles():
         unlock_money = plugin_config.chikari_yinpa_transfer_unlock_money
         if current_money < unlock_money:
             await matcher.finish(f"错误：转账功能未解锁！\n需要余额达到 {unlock_money} YPD 才能使用转账\n你的 YPD：{current_money}")
-        cooldown = plugin_config.chikari_yinpa_transfer_cooldown
-        next_time = DHandles.transfer_cooldown_get(uid)
-        if next_time >= time():
-            await matcher.finish(f"错误：转账冷却中！\n剩余：{int(next_time - time())} 秒")
         await Utils.add_money(uid, -amount)
         await Utils.add_money(target, amount)
-        DHandles.transfer_cooldown_set(uid, time() + cooldown)
         await matcher.finish(f"转账{amount}给{data[target]['name']}成功，现在你的余额是{await Utils.get_money(uid)}")
 
     # async def test(

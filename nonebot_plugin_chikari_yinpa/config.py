@@ -22,8 +22,6 @@ class Config(BaseModel):
     """加入银趴创建流程超时时间（秒）。默认：600"""
     chikari_yinpa_transfer_unlock_money: Optional[int] = 10000
     """转账功能解锁所需 YPD。默认：10000"""
-    chikari_yinpa_transfer_cooldown: Optional[int] = 3600
-    """转账冷却时间（秒）。默认：3600（1小时）"""
     chikari_yinpa_font:Path = Path(__file__).parent / "resource" / "NotoSansCJKsc-VF.ttf"
     """绘图所用主字体。默认：'模块路径/resource/NotoSansCJKsc-VF.ttf'"""
     chikari_yinpa_emoji_font:Path = Path(__file__).parent / "resource" / "NotoEmoji.ttf"

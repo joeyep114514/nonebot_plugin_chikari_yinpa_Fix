@@ -76,7 +76,6 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 | chikari_yinpa_initial_vagina_depth | 否 | 10 | 初始深度 |
 | chikari_yinpa_initial_money | 否 | 100 | 初始金钱 |
 | chikari_yinpa_transfer_unlock_money | 否 | 10000 | 转账功能解锁所需金钱 |
-| chikari_yinpa_transfer_cooldown | 否 | 3600 | 转账冷却时间（秒，默认1小时） |
 | chikari_yinpa_font | 否 | Path(__file__).parent / "resource" / "NotoSansCJK-Regular.ttc" | 绘图所用 Noto Sans CJK 主字体 |
 | chikari_yinpa_emoji_font | 否 | Path(__file__).parent / "resource" / "NotoEmoji.ttf" | 绘图所用黑白 Noto Emoji 字体 |
 
@@ -98,7 +97,7 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 | kou | 无 | 否 | 私聊/群聊 | 扣一次，能够增加少量深度 |
 | shop | 无 | 否 | 私聊/群聊 | 花费金钱购买商品 |
 | work | 无 | 否 | 私聊/群聊 | 工作，获得金钱及其他东西 |
-| transfer | 无 | 否 | 私聊/群聊 | 转账给他人（余额满 10000 YPD 解锁，冷却 1 小时） |
+| transfer | 无 | 否 | 私聊/群聊 | 转账给他人（余额满 10000 YPD 解锁，无冷却） |
 
 ## 🔭 TODO
 
@@ -118,9 +117,12 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 
 ## 📝 更新日志
 
+### v2.0.4
+
+- 移除转账冷却限制，转账无冷却（保留余额 10000 YPD 解锁门槛）
+
 ### v2.0.3
 
-- 修复转账无冷却的问题：新增转账冷却（默认 1 小时，`chikari_yinpa_transfer_cooldown` 可调）
 - 转账功能补上解锁门槛：余额达到 10000 YPD（`chikari_yinpa_transfer_unlock_money`）才可使用
 - 帮助与 README 补齐转账指令说明
 

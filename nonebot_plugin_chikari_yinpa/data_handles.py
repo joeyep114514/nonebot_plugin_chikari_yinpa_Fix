@@ -50,9 +50,6 @@ else:
 if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
     data["_work_cooldown"] = {}
 
-if "_transfer_cooldown" not in data or not isinstance(data["_transfer_cooldown"], dict):
-    data["_transfer_cooldown"] = {}
-
 #配置数据文件初始化及载入
 
 if not plugin_config_file.exists() or plugin_config_file.stat().st_size == 0:
@@ -229,36 +226,6 @@ class DHandles():
         if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
             data["_work_cooldown"] = {}
         data["_work_cooldown"][uid] = value
-        DHandles.file_save()
-        return
-    
-    def transfer_cooldown_get(uid: str):
-        """读取用户独立的转账冷却结束时间（跨注销保留）
-
-        Args:
-            uid (str): 用户id
-
-        Returns:
-            int: 下次可转账的时间戳，无记录时为 0
-        """
-        
-        global data
-        if "_transfer_cooldown" not in data or not isinstance(data["_transfer_cooldown"], dict):
-            data["_transfer_cooldown"] = {}
-        return data["_transfer_cooldown"].get(uid, 0)
-    
-    def transfer_cooldown_set(uid: str,value):
-        """写入用户独立的转账冷却结束时间（跨注销保留）
-
-        Args:
-            uid (str): 用户id
-            value (int): 下次可转账的时间戳
-        """
-        
-        global data
-        if "_transfer_cooldown" not in data or not isinstance(data["_transfer_cooldown"], dict):
-            data["_transfer_cooldown"] = {}
-        data["_transfer_cooldown"][uid] = value
         DHandles.file_save()
         return
     
