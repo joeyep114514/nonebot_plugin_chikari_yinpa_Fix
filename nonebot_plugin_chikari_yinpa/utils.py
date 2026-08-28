@@ -407,20 +407,20 @@ class Utils:
                 if i[1] > time():
                     b = True
                 else:
-                    DHandles.data_set(uid,'hp_v',(Utils.get_value(uid,'volition')[0] + 10) * 5)
+                    DHandles.data_set(uid,'hp_v',Utils.get_hp_v_max(uid))
             elif i[0] == 2 and i[1] <= time():
-                DHandles.data_set(uid,'hp_v',(Utils.get_value(uid,'volition')[0] + 10) * 5)
-                DHandles.data_set(uid,'hp_c',(Utils.get_value(uid,'constitution')[0] + 10) * 10)
+                DHandles.data_set(uid,'hp_v',Utils.get_hp_v_max(uid))
+                DHandles.data_set(uid,'hp_c',Utils.get_hp_c_max(uid))
         DHandles.data_set(uid,"state",new_state)
         if b :
-            if data[uid]['hp_c'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= (Utils.get_value(uid,'constitution')[0] + 10) * 10:
-                DHandles.data_set(uid,'hp_c',(Utils.get_value(uid,'constitution')[0] + 10) * 10)
+            if data[uid]['hp_c'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= Utils.get_hp_c_max(uid):
+                DHandles.data_set(uid,'hp_c',Utils.get_hp_c_max(uid))
             else:
                 DHandles.data_set(uid,'hp_c',data[uid]['hp_c'] + ((int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60)) * Utils.get_regeneration_rate(uid))
         else:
-            DHandles.data_set(uid,'hp_c',(Utils.get_value(uid,'constitution')[0] + 10) * 10)
-            if data[uid]['hp_v'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= (Utils.get_value(uid,'volition')[0] + 10) * 5:
-                DHandles.data_set(uid,'hp_v',(Utils.get_value(uid,'volition')[0] + 10) * 5)
+            DHandles.data_set(uid,'hp_c',Utils.get_hp_c_max(uid))
+            if data[uid]['hp_v'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= Utils.get_hp_v_max(uid):
+                DHandles.data_set(uid,'hp_v',Utils.get_hp_v_max(uid))
             else:
                 DHandles.data_set(uid,'hp_v',data[uid]['hp_v'] + ((int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60)) * Utils.get_regeneration_rate(uid))
         DHandles.data_set(uid,"last_refresh_time",time())
@@ -510,10 +510,50 @@ class Utils:
         
         if  i := Utils.get_skill(uid,7):
             if Utils.is_night():
-                return 20 * sqrt(i[2])
+                return 10 * sqrt(i[2])
             else:
-                return -20 / sqrt(i[2])
+                return -15 / sqrt(i[2])
         return 0
+
+    def get_hp_bonus(uid: str):
+        """舰装血量上限加成
+
+        舰装未破损时，意志HP与体质HP上限各增加 200×√(等级)。
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            int: 血量上限加成
+        """
+        
+        if i := Utils.boat(uid):
+            return int(200 * sqrt(i[2]))
+        return 0
+
+    def get_hp_v_max(uid: str):
+        """获取意志HP上限
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            int: 意志HP上限
+        """
+        
+        return int((Utils.get_value(uid,'volition')[0] + 10) * 5) + Utils.get_hp_bonus(uid)
+
+    def get_hp_c_max(uid: str):
+        """获取体质HP上限
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            int: 体质HP上限
+        """
+        
+        return int((Utils.get_value(uid,'constitution')[0] + 10) * 10) + Utils.get_hp_bonus(uid)
 
     def get_value(uid: str,key: str):
         """获取用户当前状态下的某一数值
@@ -542,13 +582,9 @@ class Utils:
             value = data[uid]['vagina_depth']
         elif key == 'strength':
             value = data[uid]['strength']
-            if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
             value += Utils.vampire(uid)
         elif key == 'constitution':
             value = data[uid]['constitution']
-            if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
             value += Utils.vampire(uid)
         elif key == 'technique':
             value = data[uid]['technique']
@@ -557,8 +593,6 @@ class Utils:
                 value += -20 * i[2]
         elif key == 'volition':
             value = data[uid]['volition']
-            if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
             value += Utils.vampire(uid)
             if (i := Utils.get_skill(uid,12)) and Utils.is_night():
                 value += -20 * i[2]
@@ -591,11 +625,11 @@ class Utils:
             data[uid]["state"] = [s for s in data[uid]["state"] if s[0] != 4]
             DHandles.file_save()
         if i := Utils.get_skill(uid,2):
-            atk.append([30 * sqrt(i[2]),f"{data[uid]['name']}：猫化",False])
+            atk.append([20 * sqrt(i[2]),f"{data[uid]['name']}：猫化",False])
         if i := Utils.get_skill(uid,3):
-            atk.append([Utils.get_value(uid,'intelligence')[0] / 2 * sqrt(i[2]),f"{data[uid]['name']}：自然之心",False])
+            atk.append([Utils.get_value(uid,'intelligence')[0] / 3 * sqrt(i[2]),f"{data[uid]['name']}：自然之心",False])
         if i := Utils.get_skill(uid,5):
-            atk.append([80 * sqrt(i[2]),f"{data[uid]['name']}：淫纹",False])
+            atk.append([50 * sqrt(i[2]),f"{data[uid]['name']}：淫纹",False])
         if i := Utils.get_state(uid,3):
             atk.append([30 * sqrt(i[2]),f"{data[uid]['name']}：伟哥",False])
         if i := Utils.get_skill(uid,11):
@@ -605,15 +639,15 @@ class Utils:
         if i := Utils.get_skill(target,14):
             atk.append([50 * i[2],f"{data[target]['name']}：敏感",False])
         if i := Utils.get_skill(target,15):
-            if Utils.dice(100,i[2] * 15) <= i[2]:
-                atk.append([1000,f"{data[target]['name']}：弱点",True])
+            if Utils.dice(100,i[2] * 15) < 30:
+                atk.append([300,f"{data[target]['name']}：弱点",True])
         
         if i := Utils.get_skill(target,2):
-            atk.append([-30 * sqrt(i[2]),f"{data[target]['name']}：猫化",False])
+            atk.append([-20 * sqrt(i[2]),f"{data[target]['name']}：猫化",False])
         if i := Utils.get_skill(target,3):
-            atk.append([-Utils.get_value(target,'intelligence')[0] / 2 * sqrt(i[2]),f"{data[target]['name']}：自然之心",False])
+            atk.append([-Utils.get_value(target,'intelligence')[0] / 3 * sqrt(i[2]),f"{data[target]['name']}：自然之心",False])
         if i := Utils.get_skill(target,4):
-            atk.append([-80 * sqrt(i[2]),f"{data[target]['name']}：圣体",False])
+            atk.append([-50 * sqrt(i[2]),f"{data[target]['name']}：圣体",False])
         if i := Utils.get_skill(uid,10):
             atk.append([-50 * i[2],f"{data[uid]['name']}：呓语",False])
         return atk

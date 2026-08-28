@@ -62,6 +62,26 @@ else:
     configdata = json.loads(plugin_config_file.read_text(encoding='utf-8'), strict=False)
 
 
+def _ship_hp_bonus(uid: str):
+    """舰装血量上限加成 200×√(等级)（舰装未破损时生效）
+
+    Args:
+        uid (str): 用户id
+
+    Returns:
+        int: 舰装血量上限加成
+    """
+    
+    from math import sqrt
+    for i in data.get(uid, {}).get("skill", []):
+        if i[0] == 6:
+            cooldown = i[1]
+            if cooldown is None or cooldown <= time():
+                return int(200 * sqrt(i[2]))
+            break
+    return 0
+
+
 class DHandles():
     """数据处理"""
     
@@ -127,8 +147,8 @@ class DHandles():
         
         global data
         data[uid] = dict
-        data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
-        data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
+        data[uid]["hp_v"] = int((data[uid]["volition"] + 10) * 5) + _ship_hp_bonus(uid)
+        data[uid]["hp_c"] = int((data[uid]["constitution"] + 10) * 10) + _ship_hp_bonus(uid)
         DHandles.file_save()
         return
 
@@ -182,8 +202,8 @@ class DHandles():
             "pandora_count":0,
             "explore_count":0,
         }
-        data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
-        data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
+        data[uid]["hp_v"] = int((data[uid]["volition"] + 10) * 5) + _ship_hp_bonus(uid)
+        data[uid]["hp_c"] = int((data[uid]["constitution"] + 10) * 10) + _ship_hp_bonus(uid)
         DHandles.file_save()
         return
         
