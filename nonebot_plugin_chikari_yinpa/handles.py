@@ -850,8 +850,10 @@ class yinpa_Handles():
         msg = ""
         money = 0.0
         if work_key == 1:
-            # 搬砖：勤能补拙（基础属性 + 1d500，累计次数递减加成，封顶 +25%）
-            money += (data[uid]['strength'] + data[uid]['constitution']) * Utils.dice(500,data[uid]['strength'] + data[uid]['constitution']) / 8
+            # 搬砖：勤能补拙（当前属性 + 1d500，累计次数递减加成，封顶 +25%）
+            st = Utils.get_value(uid,'strength')[0]
+            co = Utils.get_value(uid,'constitution')[0]
+            money += (st + co) * Utils.dice(500,st + co) / 8
             brick_count = data[uid].get('brick_count',0)
             multiplier = 1 + 0.25 * (1 - exp(-brick_count / 15))
             money *= multiplier
@@ -862,35 +864,40 @@ class yinpa_Handles():
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
             msg += f"搬砖经验累积！本次搬砖收入 ×{round(multiplier,3)}\n"
         elif work_key == 2:
-            # 援交：基础属性 + 1d500，榨精心得检定 + 意志检定失神
-            money += (data[uid]['technique'] * 0.7 + data[uid]['charm'] * 0.9) * Utils.dice(500,data[uid]['technique'] + data[uid]['charm']) / 6
+            # 援交：当前属性 + 1d500，榨精心得检定 + 意志检定失神
+            te = Utils.get_value(uid,'technique')[0]
+            ch = Utils.get_value(uid,'charm')[0]
+            vo = Utils.get_value(uid,'volition')[0]
+            money += (te * 0.7 + ch * 0.9) * Utils.dice(500,te + ch) / 6
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(400,data[uid]['technique'] + data[uid]['charm'])
+            d = Utils.dice(400,te + ch)
             msg += f"榨精心得检定：1d400 = {d} "
-            if d < (data[uid]['technique'] + data[uid]['charm']):
+            if d < (te + ch):
                 if Utils.get_state(uid,4):
-                    msg += f" < {data[uid]['technique'] + data[uid]['charm']}\n你已拥有【榨精心得】，本次不再重复获得。\n"
+                    msg += f" < {te + ch}\n你已拥有【榨精心得】，本次不再重复获得。\n"
                 else:
                     DHandles.state_refresh(uid,4,time() + 315360000)
-                    msg += f" < {data[uid]['technique'] + data[uid]['charm']}\n获得状态：【榨精心得】（ID：4），作为主动方时额外造成对方当前HP的10%。\n"
+                    msg += f" < {te + ch}\n获得状态：【榨精心得】（ID：4），作为主动方时额外造成对方当前HP的10%。\n"
             else:
-                msg += f" >= {data[uid]['technique'] + data[uid]['charm']}\n"
-            d = Utils.dice(100,data[uid]['volition'])
+                msg += f" >= {te + ch}\n"
+            d = Utils.dice(100,vo)
             msg += f"意志检定：1d100 = {d} "
-            if d >= data[uid]['volition']:
+            if d >= vo:
                 DHandles.data_set(uid,"hp_v",0)
                 d = min(Utils.dice(30,(int)(uid) ^ 100), 30)
                 DHandles.state_refresh(uid,1,time() + d * 60)
                 DHandles.achievement_set(uid,"A03")
-                msg += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                msg += f" >= {vo}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
             else:
-                msg += f" < {data[uid]['volition']}\n"
+                msg += f" < {vo}\n"
         elif work_key == 3:
             # 直播：连续开播（2小时未直播或做过其他工作即断链）
-            money += (data[uid]['intelligence'] + data[uid]['charm']) * Utils.dice(500,data[uid]['intelligence'] + data[uid]['charm']) / 8
+            il = Utils.get_value(uid,'intelligence')[0]
+            ch = Utils.get_value(uid,'charm')[0]
+            money += (il + ch) * Utils.dice(500,il + ch) / 8
             if money < 0:
                 money = 0
             now = int(time())
@@ -910,37 +917,42 @@ class yinpa_Handles():
             DHandles.data_set(uid,'last_live_time',now)
             DHandles.data_set(uid,'live_broken',False)
         elif work_key == 4:
-            # 写文：基础属性 + 1d500，意志检定通过 ×1.3
-            money += (data[uid]['technique'] + data[uid]['intelligence']) * Utils.dice(500,data[uid]['technique'] + data[uid]['intelligence']) / 9
+            # 写文：当前属性 + 1d500，意志检定通过 ×1.3
+            te = Utils.get_value(uid,'technique')[0]
+            il = Utils.get_value(uid,'intelligence')[0]
+            vo = Utils.get_value(uid,'volition')[0]
+            money += (te + il) * Utils.dice(500,te + il) / 9
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,data[uid]['volition'])
+            d = Utils.dice(100,vo)
             msg += f"意志检定：1d100 = {d} "
-            if d < data[uid]['volition']:
+            if d < vo:
                 money *= 1.3
                 money = round(money, 2)
-                msg += f" < {data[uid]['volition']}\n文思泉涌！本次写文收益 ×1.3，最终收益：{money}\n"
+                msg += f" < {vo}\n文思泉涌！本次写文收益 ×1.3，最终收益：{money}\n"
             else:
-                msg += f" >= {data[uid]['volition']}\n"
+                msg += f" >= {vo}\n"
         elif work_key == 5:
-            # 打架：基础属性 + 1d500，恒触发体质检定昏迷
-            money += (data[uid]['strength'] + data[uid]['constitution']) * Utils.dice(500,data[uid]['strength'] + data[uid]['constitution']) / 6
+            # 打架：当前属性 + 1d500，恒触发体质检定昏迷
+            st = Utils.get_value(uid,'strength')[0]
+            co = Utils.get_value(uid,'constitution')[0]
+            money += (st + co) * Utils.dice(500,st + co) / 6
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,data[uid]['constitution'])
+            d = Utils.dice(100,co)
             msg += f"体质检定：1d100 = {d} "
-            if d >= data[uid]['constitution']:
+            if d >= co:
                 DHandles.data_set(uid,"hp_v",0)
                 d = Utils.dice(3,(int)(uid) ^ 103)
                 DHandles.state_refresh(uid,2,time() + d * 3600)
                 DHandles.achievement_set(uid,"A04")
-                msg += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d3 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+                msg += f" >= {co}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d3 = {d}小时。（期间无法行动，无法被透，技能失效。）"
             else:
-                msg += f" < {data[uid]['constitution']}\n"
+                msg += f" < {co}\n"
         elif work_key == 6:
             # 探险：彩票（成功概率50%，事件触发率30%）
             d = Utils.dice(100,(int)(uid) ^ 102)
@@ -957,7 +969,7 @@ class yinpa_Handles():
                     d = Utils.dice(100,(int)(uid) ^ 106) / 20
                     new_value = data[uid][i] + d
                     if i in ['constitution','volition']:
-                        new_value = min(new_value, 90)
+                        new_value = min(new_value, 80)
                     msg += f"触发事件：你的{dicts.attribute_dict[i]}： {data[uid][i]} → {new_value}\n"
                     DHandles.data_set(uid,i,new_value)
                 elif d >= 4 and d <= 6:

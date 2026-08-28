@@ -600,6 +600,8 @@ class Utils:
             value = data[uid]['intelligence']
         elif key == 'charm':
             value = data[uid]['charm']
+        if key in ['constitution','volition']:
+            value = min(value, 80)
         if value < 0:
             value = 0
         return [round(value, 2),b]
@@ -668,36 +670,38 @@ class Utils:
             DHandles.data_set(uid,'hp_v',(int)(Utils.get_value(uid,"hp")[0] - hp))
             if data[uid]['hp_v'] <= 0:
                 d = Utils.dice(100,(int)(uid) ^ 10)
+                vol = Utils.get_value(uid,'volition')[0]
                 str += f"\n{data[uid]['name']}高潮了！\n意志检定：1d100 = {d}"
-                if d >= data[uid]['volition']:
+                if d >= vol:
                     DHandles.data_set(uid,'hp_v',0)
                     d = min(Utils.dice(30,(int)(uid) ^ 11), 30)
                     DHandles.state_refresh(uid,1,time() + d * 60)
                     DHandles.achievement_set(uid,"A03")
-                    str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                    str += f" >= {vol}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
                 else:
-                    d = Utils.dice(data[uid]['volition'],(int)(uid) ^ 12)
+                    d = Utils.dice(vol,(int)(uid) ^ 12)
                     DHandles.data_set(uid,'hp_v',(d + 10) * 5)
-                    str += f" < {data[uid]['volition']}\n{data[uid]['name']}的意志HP回复至{data[uid]['hp_v']}"
+                    str += f" < {vol}\n{data[uid]['name']}的意志HP回复至{data[uid]['hp_v']}"
         else:
             DHandles.data_set(uid,'hp_c',(int)(Utils.get_value(uid,"hp")[0] - hp))
             DHandles.state_refresh(uid,1,Utils.get_state(uid,1)[1] + 60)
             if data[uid]['hp_c'] <= 0:
                 d = Utils.dice(100,(int)(uid) ^ 13)
+                con = Utils.get_value(uid,'constitution')[0]
                 str += f"\n{data[uid]['name']}高潮了！\n体质检定：1d100 = {d}"
-                if d >= data[uid]['constitution']:
+                if d >= con:
                     DHandles.data_set(uid,'hp_c',0)
                     d = min(Utils.dice(5,(int)(uid) ^ 14), 5)
                     DHandles.state_refresh(uid,2,time() + d * 3600)
                     DHandles.achievement_set(uid,"A04")
-                    str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+                    str += f" >= {con}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
                     if Utils.boat(uid):
                         DHandles.skill_refresh(uid,6,time() + 259200)
                         str += f"\n{data[uid]['name']}的舰装破损了！将进入三天的冷却。"
                 else:
-                    d = Utils.dice(data[uid]['constitution'],(int)(uid) ^ 15)
+                    d = Utils.dice(con,(int)(uid) ^ 15)
                     DHandles.data_set(uid,'hp_c',(d + 10) * 5)
-                    str += f" < {data[uid]['constitution']}\n{data[uid]['name']}的体质HP回复至{data[uid]['hp_c']}"
+                    str += f" < {con}\n{data[uid]['name']}的体质HP回复至{data[uid]['hp_c']}"
         if str:
             str = "\n" + str
         return str
@@ -882,7 +886,7 @@ class Utils:
             elif d == 4:
                 d = Utils.dice(10,134)
                 actual = Utils.d10_apply(uid,'constitution',d)
-                new_value = min(data[uid]['constitution'] + actual, 90)
+                new_value = min(data[uid]['constitution'] + actual, 80)
                 str += f"1d10 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
                 if actual < d:
                     str += "（已达D10预算上限）"
@@ -898,7 +902,7 @@ class Utils:
             elif d == 6:
                 d = Utils.dice(10,136)
                 actual = Utils.d10_apply(uid,'volition',d)
-                new_value = min(data[uid]['volition'] + actual, 90)
+                new_value = min(data[uid]['volition'] + actual, 80)
                 str += f"1d10 = {d}\n意志：{data[uid]['volition']} → {new_value}"
                 if actual < d:
                     str += "（已达D10预算上限）"
@@ -962,7 +966,7 @@ class Utils:
                 elif d == 4:
                     d = Utils.dice(100,134)
                     actual = Utils.d10_apply(uid,'constitution',d * si)
-                    new_value = min(data[uid]['constitution'] + actual, 90)
+                    new_value = min(data[uid]['constitution'] + actual, 80)
                     str += f"1d100 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
                     DHandles.data_set(uid,'constitution',new_value)
                 elif d == 5:
@@ -974,7 +978,7 @@ class Utils:
                 elif d == 6:
                     d = Utils.dice(100,136)
                     actual = Utils.d10_apply(uid,'volition',d * si)
-                    new_value = min(data[uid]['volition'] + actual, 90)
+                    new_value = min(data[uid]['volition'] + actual, 80)
                     str += f"1d100 = {d}\n意志：{data[uid]['volition']} → {new_value}"
                     DHandles.data_set(uid,'volition',new_value)
                 elif d == 7:
