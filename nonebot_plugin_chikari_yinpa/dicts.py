@@ -4,7 +4,7 @@ class dicts():
     """
     
     yinpa_help_dict = {
-        "":"Chikari_Yinpa_Fix v2.0.6 模块帮助\n——新手指南——\n第一步：/yinpa_join <昵称> 加入银趴（选择种族并分配自由属性点）\n第二步：/sign_in 每日签到领取 YPD，/work 打工赚钱\n第三步：/shop 购买道具（伟哥、技能书、D10 骰子）\n第四步：/transfer <金额> <@某人> 转账给他人\n查询：/info 查看个人信息、属性与成就\n分类帮助：/yinpa_help 新手指南 / 种族 / 技能 / 状态 / 工作 / 商店",
+        "":"Chikari_Yinpa_Fix v2.0.7 模块帮助\n——新手指南——\n第一步：/yinpa_join <昵称> 加入银趴（选择种族并分配自由属性点）\n第二步：/sign_in 每日签到领取 YPD，/work 打工赚钱\n第三步：/shop 购买道具（伟哥、技能书、D10 骰子）\n第四步：/transfer <金额> <@某人> 转账给他人\n查询：/info 查看个人信息、属性与成就\n分类帮助：/yinpa_help 新手指南 / 种族 / 技能 / 状态 / 工作 / 商店",
         "help":"help\n命令：/help [参数]\n命令别称：/银趴帮助\n查询Chikari_Yinpa_Fix的帮助\n可查询：新手指南 / 种族 / 技能 / 状态 / 工作 / 商店\n例：/help 新手指南、/help 工作、/help 技能",
         "guide":"新手指南\n1. 加入银趴：/yinpa_join <昵称>，选择种族并分配自由属性点（体质/意志每 2 点自由点换 1 属性）。\n2. 赚取 YPD：/sign_in 每日签到；/work 打工（搬砖/援交/直播/写文/打架/探险），工作收益基于基础属性。\n3. 提升属性：/shop 购买 D10 骰子随机提升属性（受预算池限制，见 /help 商店）；探险事件也可提升属性。\n4. 互动对战：/tou 透、/zha 榨、/chong 冲、/kou 扣，注意意志HP与体质HP。\n5. 成就系统：/info 查看已达成成就，累计工作/钓鱼/签到/消费均可解锁。\n6. 离开银趴：/yinpa_leave 按提示输入 key 码清除数据。",
         "sign_in":"sign_in\n命令：/sign_in\n命令别称：/签到 /打卡\n每日打卡，每天可使用一次，增加长度、深度、金钱",

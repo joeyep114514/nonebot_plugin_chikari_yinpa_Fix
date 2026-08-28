@@ -226,16 +226,41 @@ class Utils:
         # 防御：限制单行长度与总行数，防止超长文本（如超长昵称）触发超大图像分配导致内存/CPU 耗尽
         max_line_len = 100
         max_lines = 100
+        # 自动换行宽度上限：超过该宽度（像素）的单行会折行，避免渲染出超宽长条图
+        max_width = 800
         liens = text.split('\n')
         liens = [line[:max_line_len] for line in liens][:max_lines]
-        text = "\n".join(liens)
         font, emoji_font, emoji_scale = Utils._load_fonts(fontSize)
+
+        def _char_width(character: str) -> float:
+            return (emoji_font.getlength(character) * emoji_scale if Utils._is_emoji(character)
+                    else font.getlength(character))
+
+        # 按像素宽度自动换行
+        wrapped_lines = []
+        for line in liens:
+            if not line:
+                wrapped_lines.append("")
+                continue
+            cur = ""
+            cur_width = 0.0
+            for character in line:
+                w = _char_width(character)
+                if cur and cur_width + w > max_width:
+                    wrapped_lines.append(cur)
+                    cur = character
+                    cur_width = w
+                else:
+                    cur += character
+                    cur_width += w
+            wrapped_lines.append(cur)
+        liens = wrapped_lines[:max_lines]
+
         line_widths = []
         for line in liens:
             line_width = 0
             for character in line:
-                line_width += (emoji_font.getlength(character) * emoji_scale if Utils._is_emoji(character)
-                               else font.getlength(character))
+                line_width += _char_width(character)
             line_widths.append(line_width)
         image = Image.new("RGB", (max(1, int(max(line_widths, default=0))), len(liens) * (fontSize + 5)), (255, 255, 255))
         draw = ImageDraw.Draw(image)
