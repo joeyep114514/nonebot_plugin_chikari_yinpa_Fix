@@ -942,7 +942,7 @@ class Utils:
                     DHandles.achievement_set(uid,"C05")
                 elif d == 2:
                     si = -1
-                    str += "1d2 = 2（大失败，惩罚减半）\n"
+                    str += "1d2 = 2（大失败）\n"
                     DHandles.achievement_set(uid,"C06")
                 d = Utils.dice(9,1311)
                 str += f"1d9 = {d}\n"
@@ -951,80 +951,56 @@ class Utils:
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'penis_length',pen * 0.1 * si)
                     new_value = round(data[uid]['penis_length'] + actual, 2)
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n长度：{data[uid]['penis_length']} → {new_value}"
+                    str += f"1d100 = {pen}\n长度：{data[uid]['penis_length']} → {new_value}"
                     DHandles.data_set(uid,'penis_length',new_value)
                 elif d == 2:
                     roll = Utils.dice(100,132)
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'vagina_depth',pen * 0.1 * si)
                     new_value = round(data[uid]['vagina_depth'] + actual, 2)
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n深度：{data[uid]['vagina_depth']} → {new_value}"
+                    str += f"1d100 = {pen}\n深度：{data[uid]['vagina_depth']} → {new_value}"
                     DHandles.data_set(uid,'vagina_depth',new_value)
                 elif d == 3:
                     roll = Utils.dice(100,133)
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'strength',pen * si)
                     new_value = data[uid]['strength'] + actual
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n力量：{data[uid]['strength']} → {new_value}"
+                    str += f"1d100 = {pen}\n力量：{data[uid]['strength']} → {new_value}"
                     DHandles.data_set(uid,'strength',new_value)
                 elif d == 4:
                     roll = Utils.dice(100,134)
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'constitution',pen * si)
                     new_value = min(data[uid]['constitution'] + actual, 80)
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n体质：{data[uid]['constitution']} → {new_value}"
+                    str += f"1d100 = {pen}\n体质：{data[uid]['constitution']} → {new_value}"
                     DHandles.data_set(uid,'constitution',new_value)
                 elif d == 5:
                     roll = Utils.dice(100,135)
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'technique',pen * si)
                     new_value = data[uid]['technique'] + actual
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n技巧：{data[uid]['technique']} → {new_value}"
+                    str += f"1d100 = {pen}\n技巧：{data[uid]['technique']} → {new_value}"
                     DHandles.data_set(uid,'technique',new_value)
                 elif d == 6:
                     roll = Utils.dice(100,136)
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'volition',pen * si)
                     new_value = min(data[uid]['volition'] + actual, 80)
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n意志：{data[uid]['volition']} → {new_value}"
+                    str += f"1d100 = {pen}\n意志：{data[uid]['volition']} → {new_value}"
                     DHandles.data_set(uid,'volition',new_value)
                 elif d == 7:
                     roll = Utils.dice(100,137)
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'intelligence',pen * si)
                     new_value = data[uid]['intelligence'] + actual
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n智力：{data[uid]['intelligence']} → {new_value}"
+                    str += f"1d100 = {pen}\n智力：{data[uid]['intelligence']} → {new_value}"
                     DHandles.data_set(uid,'intelligence',new_value)
                 elif d == 8:
                     roll = Utils.dice(100,138)
                     pen = roll if si == 1 else round(roll / 2)
                     actual = Utils.d10_apply(uid,'charm',pen * si)
                     new_value = data[uid]['charm'] + actual
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen}）"
-                    str += f"\n魅力：{data[uid]['charm']} → {new_value}"
+                    str += f"1d100 = {pen}\n魅力：{data[uid]['charm']} → {new_value}"
                     DHandles.data_set(uid,'charm',new_value)
                 elif d == 9:
                     roll = Utils.dice(100,139)
@@ -1032,10 +1008,7 @@ class Utils:
                     actual = Utils.d10_apply(uid,'money',pen * 1000 * si)
                     current_money = await Utils.get_money(uid)
                     new_money = await Utils.add_money(uid, actual)
-                    str += f"1d100 = {roll}"
-                    if si == -1:
-                        str += f"（大失败惩罚减半：实际 {pen * 1000}）"
-                    str += f"\nYPD：{current_money} → {new_money}"
+                    str += f"1d100 = {pen}\nYPD：{current_money} → {new_money}"
         return str
     
     async def get_group_yinpa_list(bid: str,gid: int):
