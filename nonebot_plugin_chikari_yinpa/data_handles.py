@@ -170,6 +170,17 @@ class DHandles():
             "last_operation_time":0,
             "last_refresh_time":time(),
             "next_work_time":0,
+            "achievements":[],
+            "d10_used":{},
+            "brick_count":0,
+            "live_bonus":False,
+            "last_live_time":0,
+            "live_broken":False,
+            "work_count":0,
+            "sign_in_count":0,
+            "d10_count":0,
+            "pandora_count":0,
+            "explore_count":0,
         }
         data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
         data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
@@ -287,3 +298,21 @@ class DHandles():
         if not b:
             data[uid]["state"].append([id,value,level])
         return f"获得状态：{dicts.state_dict[id]}（等级：{level}）（ID：{id}）（持续时间：{(int)(value - time())}秒）\n"
+
+    def achievement_set(uid: str,aid: str):
+        """写入成就（去重）
+
+        Args:
+            uid (str): 用户id
+            aid (str): 成就id
+        """
+        
+        global data
+        achievements = data[uid].get("achievements")
+        if not isinstance(achievements, list):
+            achievements = []
+        if aid not in achievements:
+            achievements.append(aid)
+            data[uid]["achievements"] = achievements
+            DHandles.file_save()
+        return
