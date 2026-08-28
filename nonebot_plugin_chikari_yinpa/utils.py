@@ -6,13 +6,20 @@ from random import randint,seed,choice
 from time import time,localtime
 from PIL import Image,ImageDraw,ImageFont
 from io import BytesIO
-from math import sqrt
+from math import sqrt, exp
 from pathlib import Path
 
 from .data_handles import data,configdata,DHandles
 from .dicts import dicts
 from .config import plugin_config
 from nonebot_plugin_value.api import api_balance
+
+# 钓鱼插件可选集成：用于成就扫描（B02/C03/C04/D01/D02）
+try:
+    from nonebot_plugin_fishing2.data_source import get_fishing_achievement_stats as _fishing_get_stats
+    _FISHING_AVAILABLE = True
+except Exception:
+    _FISHING_AVAILABLE = False
 
 class Utils:
     @staticmethod
@@ -257,6 +264,7 @@ class Utils:
         """
         
         await Utils.refresh_data(uid)
+        await Utils.achievement_scan(uid)
         user_data = data[uid]
         skill_text = ""
         state_text = ""
@@ -268,9 +276,15 @@ class Utils:
         if not skill_text:
             skill_text = '无'
         for i in user_data["state"]:
-            state_text += dicts.state_dict[i[0]] + f'（等级：{i[2]}）（剩余时间：{(int)(i[1] - time())}秒）' + '；'
+            if i[0] == 4:
+                state_text += dicts.state_dict[i[0]] + f'（等级：{i[2]}）（永久，触发后消耗）' + '；'
+            else:
+                state_text += dicts.state_dict[i[0]] + f'（等级：{i[2]}）（剩余时间：{(int)(i[1] - time())}秒）' + '；'
         if not state_text:
             state_text = '无'
+        ach_list = data[uid].get("achievements") or []
+        ach_names = "、".join([dicts.achievement_dict.get(a, a) for a in ach_list]) if ach_list else "无"
+        ach_text = f"成就：{len(ach_list)}/24\n已达成：{ach_names}"
         text = f"    ID：{uid}\n"\
         f"    昵称：{user_data['name']}\n"\
         f"    种族：{dicts.species_dict[user_data['species']]}\n"\
@@ -288,9 +302,63 @@ class Utils:
         f"    技能：{skill_text}\n"\
         f"    状态：{state_text}\n"\
         f"    被动次数：{user_data['passive_times']}\n"\
-        f"    主动次数：{user_data['active_times']}"\
+        f"    主动次数：{user_data['active_times']}\n"\
+        f"    {ach_text}"\
         
         return Utils.text_to_image(text)
+    
+    async def achievement_scan(uid: str):
+        """扫描可回溯成就并写入新达成者
+
+        Args:
+            uid (str): 用户id
+        """
+        
+        if not isinstance(data[uid].get("achievements"), list):
+            DHandles.data_set(uid,"achievements",[])
+        money = await Utils.get_money(uid)
+        if money >= 1000:
+            DHandles.achievement_set(uid,"A05")
+        if money >= 10000:
+            DHandles.achievement_set(uid,"A06")
+        if money >= 1000000:
+            DHandles.achievement_set(uid,"B05")
+        if money >= 10000000:
+            DHandles.achievement_set(uid,"D03")
+        if data[uid].get("work_count",0) >= 100:
+            DHandles.achievement_set(uid,"B01")
+        if data[uid].get("sign_in_count",0) >= 30:
+            DHandles.achievement_set(uid,"B03")
+        if data[uid].get("active_times",0) + data[uid].get("passive_times",0) >= 100:
+            DHandles.achievement_set(uid,"B04")
+        if data[uid].get("d10_count",0) >= 50:
+            DHandles.achievement_set(uid,"B06")
+        if data[uid].get("pandora_count",0) >= 30:
+            DHandles.achievement_set(uid,"B07")
+        if data[uid].get("explore_count",0) >= 50:
+            DHandles.achievement_set(uid,"B08")
+        skill_ids = [s[0] for s in data[uid].get("skill",[])]
+        if all(sid in skill_ids for sid in range(2,10)):
+            DHandles.achievement_set(uid,"C01")
+        if sum(1 for sid in skill_ids if 10 <= sid <= 15) >= 3:
+            DHandles.achievement_set(uid,"C02")
+        if _FISHING_AVAILABLE:
+            try:
+                fstats = await _fishing_get_stats(uid)
+            except Exception:
+                fstats = None
+            if fstats:
+                if fstats.get("frequency",0) >= 100:
+                    DHandles.achievement_set(uid,"B02")
+                if fstats.get("caught_all_catchable"):
+                    DHandles.achievement_set(uid,"C03")
+                if fstats.get("caught_all_catchable") and fstats.get("has_special"):
+                    DHandles.achievement_set(uid,"C04")
+                if fstats.get("total_spent",0) >= 1000000:
+                    DHandles.achievement_set(uid,"D01")
+                if fstats.get("has_eternal_rod"):
+                    DHandles.achievement_set(uid,"D02")
+        return
     
     async def refresh_data(uid: str):
         """更新用户数据
@@ -417,9 +485,9 @@ class Utils:
         
         if  i := Utils.get_skill(uid,7):
             if Utils.is_night():
-                return 50 * sqrt(i[2])
+                return 20 * sqrt(i[2])
             else:
-                return -50 / sqrt(i[2])
+                return -20 / sqrt(i[2])
         return 0
 
     def get_value(uid: str,key: str):
@@ -491,6 +559,12 @@ class Utils:
         await Utils.refresh_data(uid)
         await Utils.refresh_data(target)
         atk = [[Utils.get_value(uid,'technique')[0],f"{data[uid]['name']}：技巧",False]]
+        if Utils.get_state(uid,4):
+            extra = int(Utils.get_value(target,"hp")[0] * 0.1)
+            if extra > 0:
+                atk.append([extra,f"{data[uid]['name']}：榨精心得",True])
+            data[uid]["state"] = [s for s in data[uid]["state"] if s[0] != 4]
+            DHandles.file_save()
         if i := Utils.get_skill(uid,2):
             atk.append([30 * sqrt(i[2]),f"{data[uid]['name']}：猫化",False])
         if i := Utils.get_skill(uid,3):
@@ -540,6 +614,7 @@ class Utils:
                     DHandles.data_set(uid,'hp_v',0)
                     d = min(Utils.dice(30,(int)(uid) ^ 11), 30)
                     DHandles.state_refresh(uid,1,time() + d * 60)
+                    DHandles.achievement_set(uid,"A03")
                     str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
                 else:
                     d = Utils.dice(data[uid]['volition'],(int)(uid) ^ 12)
@@ -555,6 +630,7 @@ class Utils:
                     DHandles.data_set(uid,'hp_c',0)
                     d = min(Utils.dice(5,(int)(uid) ^ 14), 5)
                     DHandles.state_refresh(uid,2,time() + d * 3600)
+                    DHandles.achievement_set(uid,"A04")
                     str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
                     if Utils.boat(uid):
                         DHandles.skill_refresh(uid,6,time() + 259200)
@@ -623,6 +699,40 @@ class Utils:
             rr = 0
         return rr
     
+    D10_ATTR_KEYS = ("penis_length","vagina_depth","strength","constitution","technique","volition","intelligence","charm")
+    D10_CAP = 50
+    D10_CAP_MONEY = 500000
+
+    def d10_apply(uid: str,key: str,delta):
+        """按 D10 属性预算池规则应用属性增减并持久化预算池
+
+        Args:
+            uid (str): 用户id
+            key (str): 属性键
+            delta (float): 变更量（正数为加、负数为减）
+
+        Returns:
+            float: 实际应用的变更量
+        """
+        
+        if key == "money":
+            cap = Utils.D10_CAP_MONEY
+        else:
+            cap = Utils.D10_CAP
+        d10_used = data[uid].get("d10_used")
+        if not isinstance(d10_used, dict):
+            d10_used = {}
+        used = d10_used.get(key, 0)
+        if delta > 0:
+            actual = min(delta, cap - used)
+            if actual < 0:
+                actual = 0
+        else:
+            actual = delta
+        d10_used[key] = max(0, used + actual)
+        DHandles.data_set(uid,"d10_used",d10_used)
+        return actual
+    
     async def gain_item(uid: str,id: int):
         """用户获得物品
 
@@ -669,6 +779,7 @@ class Utils:
                 str += "你已经拥有屹立不倒，不能重复购买。\n"
                 return str
             str += DHandles.skill_refresh(uid,9,level = 1,mode = 'add')
+            DHandles.achievement_set(uid,"D04")
         elif id == 12:
             data[uid]["skill"] = [i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15,]]
             str += "已清除所有诅咒"
@@ -680,48 +791,83 @@ class Utils:
             sk = choice(pool)
             str += f"1d10 = {d}\n"
             str += DHandles.skill_refresh(uid,sk,level = 5 + d,mode = 'add')
+            DHandles.data_set(uid,'pandora_count',data[uid].get('pandora_count',0) + 1)
         elif id == 14:
+            DHandles.data_set(uid,'d10_count',data[uid].get('d10_count',0) + 1)
             d = Utils.dice(10,13)
             str += f"1d10 = {d}"
             if d == 1:
                 d = Utils.dice(10,131)
-                str += f"1d10 = {d}\n长度：{data[uid]['penis_length']} → {data[uid]['penis_length'] + d * 0.1}"
-                DHandles.data_set(uid,'penis_length',data[uid]['penis_length'] + d * 0.1)
+                actual = Utils.d10_apply(uid,'penis_length',d * 0.1)
+                new_value = data[uid]['penis_length'] + actual
+                str += f"1d10 = {d}\n长度：{data[uid]['penis_length']} → {new_value}"
+                if actual < d * 0.1:
+                    str += "（已达D10预算上限）"
+                DHandles.data_set(uid,'penis_length',new_value)
             elif d == 2:
                 d = Utils.dice(10,132)
-                str += f"1d10 = {d}\n深度：{data[uid]['vagina_depth']} → {data[uid]['vagina_depth'] + d * 0.1}"
-                DHandles.data_set(uid,'vagina_depth',data[uid]['vagina_depth'] + d * 0.1)
+                actual = Utils.d10_apply(uid,'vagina_depth',d * 0.1)
+                new_value = data[uid]['vagina_depth'] + actual
+                str += f"1d10 = {d}\n深度：{data[uid]['vagina_depth']} → {new_value}"
+                if actual < d * 0.1:
+                    str += "（已达D10预算上限）"
+                DHandles.data_set(uid,'vagina_depth',new_value)
             elif d == 3:
                 d = Utils.dice(10,133)
-                str += f"1d10 = {d}\n力量：{data[uid]['strength']} → {data[uid]['strength'] + d}"
-                DHandles.data_set(uid,'strength',data[uid]['strength'] + d)
+                actual = Utils.d10_apply(uid,'strength',d)
+                new_value = data[uid]['strength'] + actual
+                str += f"1d10 = {d}\n力量：{data[uid]['strength']} → {new_value}"
+                if actual < d:
+                    str += "（已达D10预算上限）"
+                DHandles.data_set(uid,'strength',new_value)
             elif d == 4:
                 d = Utils.dice(10,134)
-                new_value = min(data[uid]['constitution'] + d, 90)
+                actual = Utils.d10_apply(uid,'constitution',d)
+                new_value = min(data[uid]['constitution'] + actual, 90)
                 str += f"1d10 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
+                if actual < d:
+                    str += "（已达D10预算上限）"
                 DHandles.data_set(uid,'constitution',new_value)
             elif d == 5:
                 d = Utils.dice(10,135)
-                str += f"1d10 = {d}\n技巧：{data[uid]['technique']} → {data[uid]['technique'] + d}"
-                DHandles.data_set(uid,'technique',data[uid]['technique'] + d)
+                actual = Utils.d10_apply(uid,'technique',d)
+                new_value = data[uid]['technique'] + actual
+                str += f"1d10 = {d}\n技巧：{data[uid]['technique']} → {new_value}"
+                if actual < d:
+                    str += "（已达D10预算上限）"
+                DHandles.data_set(uid,'technique',new_value)
             elif d == 6:
                 d = Utils.dice(10,136)
-                new_value = min(data[uid]['volition'] + d, 90)
+                actual = Utils.d10_apply(uid,'volition',d)
+                new_value = min(data[uid]['volition'] + actual, 90)
                 str += f"1d10 = {d}\n意志：{data[uid]['volition']} → {new_value}"
+                if actual < d:
+                    str += "（已达D10预算上限）"
                 DHandles.data_set(uid,'volition',new_value)
             elif d == 7:
                 d = Utils.dice(10,137)
-                str += f"1d10 = {d}\n智力：{data[uid]['intelligence']} → {data[uid]['intelligence'] + d}"
-                DHandles.data_set(uid,'intelligence',data[uid]['intelligence'] + d)
+                actual = Utils.d10_apply(uid,'intelligence',d)
+                new_value = data[uid]['intelligence'] + actual
+                str += f"1d10 = {d}\n智力：{data[uid]['intelligence']} → {new_value}"
+                if actual < d:
+                    str += "（已达D10预算上限）"
+                DHandles.data_set(uid,'intelligence',new_value)
             elif d == 8:
                 d = Utils.dice(10,138)
-                str += f"1d10 = {d}\n魅力：{data[uid]['charm']} → {data[uid]['charm'] + d }"
-                DHandles.data_set(uid,'charm',data[uid]['charm'] + d)
+                actual = Utils.d10_apply(uid,'charm',d)
+                new_value = data[uid]['charm'] + actual
+                str += f"1d10 = {d}\n魅力：{data[uid]['charm']} → {new_value}"
+                if actual < d:
+                    str += "（已达D10预算上限）"
+                DHandles.data_set(uid,'charm',new_value)
             elif d == 9:
                 d = Utils.dice(10,139)
+                actual = Utils.d10_apply(uid,'money',d * 1000)
                 current_money = await Utils.get_money(uid)
-                new_money = await Utils.add_money(uid, d * 1000)
+                new_money = await Utils.add_money(uid, actual)
                 str += f"1d10 = {d}\nYPD：{current_money} → {new_money}"
+                if actual < d * 1000:
+                    str += "（已达D10金钱预算上限）"
             elif d == 10:
                 d = Utils.dice(2,1310)
                 str += f"1d10 = {d}\n"
@@ -729,49 +875,66 @@ class Utils:
                 if d == 1:
                     si = 1
                     str += "1d2 = 1（大成功）\n"
+                    DHandles.achievement_set(uid,"C05")
                 elif d == 2:
                     si = -1
                     str += "1d2 = 2（大失败）\n"
+                    DHandles.achievement_set(uid,"C06")
                 d = Utils.dice(9,1311)
                 str += f"1d9 = {d}\n"
                 if d == 1:
                     d = Utils.dice(100,131)
-                    str += f"1d100 = {d}\n长度：{data[uid]['penis_length']} → {data[uid]['penis_length'] + d * 0.1 * si}"
-                    DHandles.data_set(uid,'penis_length',data[uid]['penis_length'] + d * 0.1 * si)
+                    actual = Utils.d10_apply(uid,'penis_length',d * 0.1 * si)
+                    new_value = data[uid]['penis_length'] + actual
+                    str += f"1d100 = {d}\n长度：{data[uid]['penis_length']} → {new_value}"
+                    DHandles.data_set(uid,'penis_length',new_value)
                 elif d == 2:
                     d = Utils.dice(100,132)
-                    str += f"1d100 = {d}\n深度：{data[uid]['vagina_depth']} → {data[uid]['vagina_depth'] + d * 0.1 * si}"
-                    DHandles.data_set(uid,'vagina_depth',data[uid]['vagina_depth'] + d * 0.1 * si)
+                    actual = Utils.d10_apply(uid,'vagina_depth',d * 0.1 * si)
+                    new_value = data[uid]['vagina_depth'] + actual
+                    str += f"1d100 = {d}\n深度：{data[uid]['vagina_depth']} → {new_value}"
+                    DHandles.data_set(uid,'vagina_depth',new_value)
                 elif d == 3:
                     d = Utils.dice(100,133)
-                    str += f"1d100 = {d}\n力量：{data[uid]['strength']} → {data[uid]['strength'] + d * si}"
-                    DHandles.data_set(uid,'strength',data[uid]['strength'] + d * si)
+                    actual = Utils.d10_apply(uid,'strength',d * si)
+                    new_value = data[uid]['strength'] + actual
+                    str += f"1d100 = {d}\n力量：{data[uid]['strength']} → {new_value}"
+                    DHandles.data_set(uid,'strength',new_value)
                 elif d == 4:
                     d = Utils.dice(100,134)
-                    new_value = min(data[uid]['constitution'] + d * si, 90)
+                    actual = Utils.d10_apply(uid,'constitution',d * si)
+                    new_value = min(data[uid]['constitution'] + actual, 90)
                     str += f"1d100 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
                     DHandles.data_set(uid,'constitution',new_value)
                 elif d == 5:
                     d = Utils.dice(100,135)
-                    str += f"1d100 = {d}\n技巧：{data[uid]['technique']} → {data[uid]['technique'] + d * si}"
-                    DHandles.data_set(uid,'technique',data[uid]['technique'] + d * si)
+                    actual = Utils.d10_apply(uid,'technique',d * si)
+                    new_value = data[uid]['technique'] + actual
+                    str += f"1d100 = {d}\n技巧：{data[uid]['technique']} → {new_value}"
+                    DHandles.data_set(uid,'technique',new_value)
                 elif d == 6:
                     d = Utils.dice(100,136)
-                    new_value = min(data[uid]['volition'] + d * si, 90)
+                    actual = Utils.d10_apply(uid,'volition',d * si)
+                    new_value = min(data[uid]['volition'] + actual, 90)
                     str += f"1d100 = {d}\n意志：{data[uid]['volition']} → {new_value}"
                     DHandles.data_set(uid,'volition',new_value)
                 elif d == 7:
                     d = Utils.dice(100,137)
-                    str += f"1d100 = {d}\n智力：{data[uid]['intelligence']} → {data[uid]['intelligence'] + d * si}"
-                    DHandles.data_set(uid,'intelligence',data[uid]['intelligence'] + d * si)
+                    actual = Utils.d10_apply(uid,'intelligence',d * si)
+                    new_value = data[uid]['intelligence'] + actual
+                    str += f"1d100 = {d}\n智力：{data[uid]['intelligence']} → {new_value}"
+                    DHandles.data_set(uid,'intelligence',new_value)
                 elif d == 8:
                     d = Utils.dice(100,138)
-                    str += f"1d100 = {d}\n魅力：{data[uid]['charm']} → {data[uid]['charm'] + d * si}"
-                    DHandles.data_set(uid,'charm',data[uid]['charm'] + d * si)
+                    actual = Utils.d10_apply(uid,'charm',d * si)
+                    new_value = data[uid]['charm'] + actual
+                    str += f"1d100 = {d}\n魅力：{data[uid]['charm']} → {new_value}"
+                    DHandles.data_set(uid,'charm',new_value)
                 elif d == 9:
                     d = Utils.dice(100,139)
+                    actual = Utils.d10_apply(uid,'money',d * 1000 * si)
                     current_money = await Utils.get_money(uid)
-                    new_money = await Utils.add_money(uid, d * 1000 * si)
+                    new_money = await Utils.add_money(uid, actual)
                     str += f"1d100 = {d}\nYPD：{current_money} → {new_money}"
         return str
     

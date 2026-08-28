@@ -4,7 +4,7 @@ from nonebot.params import CommandArg
 from nonebot import get_bots
 from time import time
 from hashlib import md5
-from math import sqrt
+from math import sqrt, exp
 import random
 
 from .data_handles import data,configdata,DHandles
@@ -55,6 +55,7 @@ class yinpa_Handles():
         uid: str = event.get_user_id()
         if data[uid]["last_sign_in_time"] < (int)(time() / 86400):
             DHandles.data_set(uid,"last_sign_in_time",(int)(time() / 86400))
+            DHandles.data_set(uid,'sign_in_count',data[uid].get('sign_in_count',0) + 1)
             d_pl = Utils.dice(100,(int)(data[uid]['penis_length']) ^ 1)
             d_vd = Utils.dice(100,(int)(data[uid]['vagina_depth']) ^ 2)
             old_money = await Utils.get_money(uid)
@@ -306,6 +307,7 @@ class yinpa_Handles():
         name = pj["name"]
         plugin_config = _get_plugin_config()
         DHandles.user_add_with_points(uid,name,species,pts)
+        DHandles.achievement_set(uid,"A01")
         await Utils.set_money(uid, plugin_config.chikari_yinpa_initial_money)
         skill = []
         for i in dicts.species_initial_ability[species]["skill"]:
@@ -587,6 +589,7 @@ class yinpa_Handles():
         rh_str_t = Utils.reduce_hp(at,res_u)
         DHandles.data_set(uid,"active_times",data[uid]["active_times"] + 1)
         DHandles.data_set(at,"passive_times",data[at]["passive_times"] + 1)
+        DHandles.achievement_set(uid,"A02")
         await matcher.finish(f"{data[uid]['name']}透了{data[at]['name']}\n" + str_t + "\n" + str_u + hp_str +  rh_str_u +  rh_str_t)
         
     async def yinpa_zha(
@@ -719,6 +722,7 @@ class yinpa_Handles():
         rh_str_t = Utils.reduce_hp(at,res_u)
         DHandles.data_set(uid,"active_times",data[uid]["active_times"] + 1)
         DHandles.data_set(at,"passive_times",data[at]["passive_times"] + 1)
+        DHandles.achievement_set(uid,"A02")
         await matcher.finish(f"{data[uid]['name']}榨了{data[at]['name']}\n" + str_t  + "\n" + str_u + hp_str + rh_str_u + rh_str_t)
         
     async def yinpa_chong(
@@ -823,16 +827,16 @@ class yinpa_Handles():
         command = args.extract_plain_text()
         work_key = command.split()
         if not work_key:
-            str = ""
+            msg = ""
             for i in list(dicts.work_dict.keys()):
-                str += f"{i}：{dicts.work_dict[i]}\n"
-            await matcher.finish("可用工作：\n" + str + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")
+                msg += f"{i}：{dicts.work_dict[i]}\n"
+            await matcher.finish("可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")
         work_key = work_key[0]
         if not dicts.work_dict.get(work_key) and not dicts.work_help_dict.get(work_key) and not dicts.work_dict.get(int(work_key)):
-            str = ""
+            msg = ""
             for i in list(dicts.work_dict.keys()):
-                str += f"{i}：{dicts.work_dict[i]}"
-            await matcher.finish("错误：该工作不存在\n可用工作：\n" + str + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")
+                msg += f"{i}：{dicts.work_dict[i]}"
+            await matcher.finish("错误：该工作不存在\n可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")
         oc = await Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
@@ -841,114 +845,136 @@ class yinpa_Handles():
         if work_key in list(dicts.work_dict.values()):
             work_key = (list(dicts.work_dict.keys()))[(list(dicts.work_dict.values())).index(work_key)]
         work_key = int(work_key)
-        str = ""
-        money = 0
+        if work_key != 3:
+            DHandles.data_set(uid,'live_broken',True)
+        msg = ""
+        money = 0.0
         if work_key == 1:
-            money += (Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0]) * Utils.dice(200,(Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0])) / 12
+            # 搬砖：勤能补拙（基础属性 + 1d500，累计次数递减加成，封顶 +25%）
+            money += (data[uid]['strength'] + data[uid]['constitution']) * Utils.dice(500,data[uid]['strength'] + data[uid]['constitution']) / 8
+            brick_count = data[uid].get('brick_count',0)
+            multiplier = 1 + 0.25 * (1 - exp(-brick_count / 15))
+            money *= multiplier
             if money < 0:
                 money = 0
-            str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
+            DHandles.data_set(uid,'brick_count',brick_count + 1)
+            msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
+            msg += f"搬砖经验累积！本次搬砖收入 ×{round(multiplier,3)}\n"
         elif work_key == 2:
-            money += (Utils.get_value(uid,'technique')[0] * 0.7 + Utils.get_value(uid,'charm')[0] * 0.9) * Utils.dice(260,(Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'charm')[0])) / 11
+            # 援交：基础属性 + 1d500，榨精心得检定 + 意志检定失神
+            money += (data[uid]['technique'] * 0.7 + data[uid]['charm'] * 0.9) * Utils.dice(500,data[uid]['technique'] + data[uid]['charm']) / 6
             if money < 0:
                 money = 0
-            str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
+            msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
+            d = Utils.dice(400,data[uid]['technique'] + data[uid]['charm'])
+            msg += f"榨精心得检定：1d400 = {d} "
+            if d < (data[uid]['technique'] + data[uid]['charm']):
+                if Utils.get_state(uid,4):
+                    msg += f" < {data[uid]['technique'] + data[uid]['charm']}\n你已拥有【榨精心得】，本次不再重复获得。\n"
+                else:
+                    DHandles.state_refresh(uid,4,time() + 315360000)
+                    msg += f" < {data[uid]['technique'] + data[uid]['charm']}\n获得状态：【榨精心得】（ID：4），作为主动方时额外造成对方当前HP的10%。\n"
+            else:
+                msg += f" >= {data[uid]['technique'] + data[uid]['charm']}\n"
             d = Utils.dice(100,data[uid]['volition'])
-            str += f"意志检定：1d100 = {d} "
+            msg += f"意志检定：1d100 = {d} "
             if d >= data[uid]['volition']:
                 DHandles.data_set(uid,"hp_v",0)
                 d = min(Utils.dice(30,(int)(uid) ^ 100), 30)
                 DHandles.state_refresh(uid,1,time() + d * 60)
-                str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                DHandles.achievement_set(uid,"A03")
+                msg += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
             else:
-                str += f" < {data[uid]['volition']}\n"
+                msg += f" < {data[uid]['volition']}\n"
         elif work_key == 3:
-            money += (Utils.get_value(uid,'intelligence')[0] + Utils.get_value(uid,'charm')[0]) * Utils.dice(200,(Utils.get_value(uid,'intelligence')[0] + Utils.get_value(uid,'charm')[0])) / 13
+            # 直播：连续开播（2小时未直播或做过其他工作即断链）
+            money += (data[uid]['intelligence'] + data[uid]['charm']) * Utils.dice(500,data[uid]['intelligence'] + data[uid]['charm']) / 8
             if money < 0:
                 money = 0
-            str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,Utils.get_value(uid,'volition')[0])
-            str += f"智力检定：1d100 = {d} "
-            if d >= Utils.get_value(uid,'intelligence')[0]:
-                str += f" >= {data[uid]['intelligence']}\n"
-            else:
-                money += 3 * d
-                str += f" < {data[uid]['intelligence']}\n追加收益：{3 * d}\n"
+            now = int(time())
+            last_live_time = data[uid].get('last_live_time',0)
+            live_bonus = data[uid].get('live_bonus',False)
+            live_broken = data[uid].get('live_broken',False)
+            broken = (now - last_live_time > 7200) or live_broken
+            bonus_note = ""
+            if not broken and live_bonus:
+                money *= 1.3
+                bonus_note = "\n连续直播加成：×1.3"
+            elif broken and (last_live_time != 0 or live_broken):
+                bonus_note = "\n连续直播加成断链，本次收益 ×1"
+            msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}{bonus_note}\n"
+            DHandles.data_set(uid,'live_bonus',True)
+            DHandles.data_set(uid,'last_live_time',now)
+            DHandles.data_set(uid,'live_broken',False)
         elif work_key == 4:
-            money += (Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'intelligence')[0] - 40) * Utils.dice(300,(Utils.get_value(uid,'technique')[0] + Utils.get_value(uid,'intelligence')[0])) / 11
+            # 写文：基础属性 + 1d500，意志检定通过 ×1.3
+            money += (data[uid]['technique'] + data[uid]['intelligence']) * Utils.dice(500,data[uid]['technique'] + data[uid]['intelligence']) / 9
             if money < 0:
                 money = 0
-            str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-        elif work_key == 5:
-            money += (Utils.get_value(uid,'strength')[0] * 0.9 + Utils.get_value(uid,'constitution')[0] * 0.8) * Utils.dice(200,(Utils.get_value(uid,'strength')[0] + Utils.get_value(uid,'constitution')[0])) / 6.5
-            if money < 0:
-                money = 0
-            str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,(int)(uid) ^ 101)
-            str += f"体质检定：1d100 = {d} "
-            if d > 50:
-                d = Utils.dice(100,data[uid]['constitution'])
-                str += f"（触发检定）1d100 = {d} "
-                if d >= data[uid]['constitution']:
-                    DHandles.data_set(uid,"hp_v",0)
-                    d = Utils.dice(3,(int)(uid) ^ 103)
-                    DHandles.state_refresh(uid,2,time() + d * 3600)
-                    str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d3 = {d}小时。（期间无法行动，无法被透，技能失效。）"
-                else:
-                    str += f" < {data[uid]['constitution']}\n"
+            msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
+            d = Utils.dice(100,data[uid]['volition'])
+            msg += f"意志检定：1d100 = {d} "
+            if d < data[uid]['volition']:
+                money *= 1.3
+                msg += f" < {data[uid]['volition']}\n文思泉涌！本次写文收益 ×1.3，最终收益：{money}\n"
             else:
-                str += "未触发体质检定\n"
-        elif work_key == 6:
-            d = Utils.dice(100,(int)(uid) ^ 102)
-            money += (d - 80) * 500
+                msg += f" >= {data[uid]['volition']}\n"
+        elif work_key == 5:
+            # 打架：基础属性 + 1d500，恒触发体质检定昏迷
+            money += (data[uid]['strength'] + data[uid]['constitution']) * Utils.dice(500,data[uid]['strength'] + data[uid]['constitution']) / 6
             if money < 0:
                 money = 0
-            str += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(10,(int)(uid) ^ 103)
-            if d == 1:
+            msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
+            d = Utils.dice(100,data[uid]['constitution'])
+            msg += f"体质检定：1d100 = {d} "
+            if d >= data[uid]['constitution']:
+                DHandles.data_set(uid,"hp_v",0)
+                d = Utils.dice(3,(int)(uid) ^ 103)
+                DHandles.state_refresh(uid,2,time() + d * 3600)
+                DHandles.achievement_set(uid,"A04")
+                msg += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d3 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+            else:
+                msg += f" < {data[uid]['constitution']}\n"
+        elif work_key == 6:
+            # 探险：彩票（成功概率50%，事件触发率30%）
+            d = Utils.dice(100,(int)(uid) ^ 102)
+            money += (d - 50) * 300
+            if money < 0:
+                money = 0
+            msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
+            if Utils.dice(10,(int)(uid) ^ 103) <= 3:
                 d = Utils.dice(10,(int)(uid) ^ 104)
-                if d >= 1 and d <= 1:
-                    l = list(dicts.shop_dict.keys())
-                    i = Utils.dice(len(l),(int)(uid) ^ 105)
-                    str += await Utils.gain_item(uid,l[i - 1])
-                elif d >= 2 and d <= 4:
-                    l = list(dicts.state_dict.keys())
-                    i = Utils.dice(len(l),(int)(uid) ^ 106)
-                    d = Utils.dice(36000,(int)(uid) ^ 107)
-                    str += DHandles.state_refresh(uid,i,time() + d,level = 1,mode = 'add')
-                elif d >= 5 and d <= 7:
-                    i = Utils.dice(8,(int)(uid) ^ 108)
-                    d = Utils.dice(100,(int)(uid) ^ 109) / 20
-                    if i == 1:
-                        i = 'strength'
-                    elif i == 2:
-                        i = 'constitution'
-                    elif i == 3:
-                        i = 'technique'
-                    elif i == 4:
-                        i = 'volition'
-                    elif i == 5:
-                        i = 'intelligence'
-                    elif i == 6:
-                        i = 'charm'
-                    elif i == 7:
-                        i = 'penis_length'
-                    elif i == 8:
-                        i = 'vagina_depth'
+                if d >= 1 and d <= 3:
+                    keys = ['strength','constitution','technique','volition','intelligence','charm']
+                    i = keys[Utils.dice(6,(int)(uid) ^ 105) - 1]
+                    d = Utils.dice(100,(int)(uid) ^ 106) / 20
                     new_value = data[uid][i] + d
                     if i in ['constitution','volition']:
                         new_value = min(new_value, 90)
-                    str += f"你的{dicts.attribute_dict[i]}： {data[uid][i]} → {new_value}\n"
+                    msg += f"触发事件：你的{dicts.attribute_dict[i]}： {data[uid][i]} → {new_value}\n"
                     DHandles.data_set(uid,i,new_value)
-                elif d >= 8 and d <= 10:
-                    l = [10,11,12,13,14,15,]
-                    i = Utils.dice(len(l),(int)(uid) ^ 106)
-                    d = Utils.dice(86400,(int)(uid) ^ 107)
-                    str += DHandles.skill_refresh(uid,l[i - 1],level = 1,mode = 'add')
+                elif d >= 4 and d <= 6:
+                    l = list(dicts.shop_dict.keys())
+                    i = Utils.dice(len(l),(int)(uid) ^ 107)
+                    msg += await Utils.gain_item(uid,l[i - 1])
+                elif d >= 7 and d <= 9:
+                    d = Utils.dice(1000,(int)(uid) ^ 108)
+                    await Utils.add_money(uid, d)
+                    msg += f"触发事件：金钱彩蛋 +{d} YPD\n"
+                elif d == 10:
+                    d = Utils.dice(5000,(int)(uid) ^ 109)
+                    await Utils.add_money(uid, d)
+                    l = list(dicts.shop_dict.keys())
+                    i = Utils.dice(len(l),(int)(uid) ^ 110)
+                    msg += f"触发稀有奇遇：金钱 +{d} YPD\n"
+                    msg += await Utils.gain_item(uid,l[i - 1])
         DHandles.work_cooldown_set(uid,(time() + 3600))
+        DHandles.data_set(uid,'work_count',data[uid].get('work_count',0) + 1)
+        if work_key == 6:
+            DHandles.data_set(uid,'explore_count',data[uid].get('explore_count',0) + 1)
         await Utils.add_money(uid, money)
-        str += "一小时内你将无法继续工作"
-        await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
+        msg += "一小时内你将无法继续工作"
+        await matcher.finish(MessageSegment.image(Utils.text_to_image(msg)))
 
     async def yinpa_transfer(
             matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
