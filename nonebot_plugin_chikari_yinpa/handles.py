@@ -590,7 +590,7 @@ class yinpa_Handles():
         DHandles.data_set(uid,"active_times",data[uid]["active_times"] + 1)
         DHandles.data_set(at,"passive_times",data[at]["passive_times"] + 1)
         DHandles.achievement_set(uid,"A02")
-        await matcher.finish(f"{data[uid]['name']}透了{data[at]['name']}\n" + str_t + "\n" + str_u + hp_str +  rh_str_u +  rh_str_t)
+        await matcher.finish(MessageSegment.image(Utils.text_to_image(f"{data[uid]['name']}透了{data[at]['name']}\n" + str_t + "\n" + str_u + hp_str +  rh_str_u +  rh_str_t)))
         
     async def yinpa_zha(
             matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
@@ -723,7 +723,7 @@ class yinpa_Handles():
         DHandles.data_set(uid,"active_times",data[uid]["active_times"] + 1)
         DHandles.data_set(at,"passive_times",data[at]["passive_times"] + 1)
         DHandles.achievement_set(uid,"A02")
-        await matcher.finish(f"{data[uid]['name']}榨了{data[at]['name']}\n" + str_t  + "\n" + str_u + hp_str + rh_str_u + rh_str_t)
+        await matcher.finish(MessageSegment.image(Utils.text_to_image(f"{data[uid]['name']}榨了{data[at]['name']}\n" + str_t  + "\n" + str_u + hp_str + rh_str_u + rh_str_t)))
         
     async def yinpa_chong(
             matcher: Matcher,event: GroupMessageEvent
@@ -788,7 +788,7 @@ class yinpa_Handles():
             str = ""
             for i in list(dicts.shop_dict.keys()):
                 str += f"{i}：{dicts.shop_dict[i]} 售价：{dicts.shop_price_dict[i]}\n"
-            await matcher.finish("可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")
+            await matcher.finish(MessageSegment.image(Utils.text_to_image("可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
         else:
             goods = shop_key
             price = 0
@@ -797,7 +797,7 @@ class yinpa_Handles():
                     str = ""
                     for j in list(dicts.shop_dict.keys()):
                         str += f"{j}：{dicts.shop_dict[j]} 售价：{dicts.shop_price_dict[j]}\n"
-                    await matcher.finish("错误：该商品不存在\n可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")
+                    await matcher.finish(MessageSegment.image(Utils.text_to_image("错误：该商品不存在\n可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
                 if i in list(dicts.shop_dict.values()):
                     i = (list(dicts.shop_dict.keys()))[(list(dicts.shop_dict.values())).index(i)]
                 i = int(i)
@@ -830,13 +830,13 @@ class yinpa_Handles():
             msg = ""
             for i in list(dicts.work_dict.keys()):
                 msg += f"{i}：{dicts.work_dict[i]}\n"
-            await matcher.finish("可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")
+            await matcher.finish(MessageSegment.image(Utils.text_to_image("可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")))
         work_key = work_key[0]
         if not dicts.work_dict.get(work_key) and not dicts.work_help_dict.get(work_key) and not dicts.work_dict.get(int(work_key)):
             msg = ""
             for i in list(dicts.work_dict.keys()):
                 msg += f"{i}：{dicts.work_dict[i]}"
-            await matcher.finish("错误：该工作不存在\n可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")
+            await matcher.finish(MessageSegment.image(Utils.text_to_image("错误：该工作不存在\n可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")))
         oc = await Utils.operation_check(uid)
         if oc:
             await matcher.finish(f"错误：操作失败！\n原因：{oc}")
@@ -857,6 +857,7 @@ class yinpa_Handles():
             money *= multiplier
             if money < 0:
                 money = 0
+            money = round(money, 2)
             DHandles.data_set(uid,'brick_count',brick_count + 1)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
             msg += f"搬砖经验累积！本次搬砖收入 ×{round(multiplier,3)}\n"
@@ -865,6 +866,7 @@ class yinpa_Handles():
             money += (data[uid]['technique'] * 0.7 + data[uid]['charm'] * 0.9) * Utils.dice(500,data[uid]['technique'] + data[uid]['charm']) / 6
             if money < 0:
                 money = 0
+            money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
             d = Utils.dice(400,data[uid]['technique'] + data[uid]['charm'])
             msg += f"榨精心得检定：1d400 = {d} "
@@ -902,6 +904,7 @@ class yinpa_Handles():
                 bonus_note = "\n连续直播加成：×1.3"
             elif broken and (last_live_time != 0 or live_broken):
                 bonus_note = "\n连续直播加成断链，本次收益 ×1"
+            money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}{bonus_note}\n"
             DHandles.data_set(uid,'live_bonus',True)
             DHandles.data_set(uid,'last_live_time',now)
@@ -911,11 +914,13 @@ class yinpa_Handles():
             money += (data[uid]['technique'] + data[uid]['intelligence']) * Utils.dice(500,data[uid]['technique'] + data[uid]['intelligence']) / 9
             if money < 0:
                 money = 0
+            money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
             d = Utils.dice(100,data[uid]['volition'])
             msg += f"意志检定：1d100 = {d} "
             if d < data[uid]['volition']:
                 money *= 1.3
+                money = round(money, 2)
                 msg += f" < {data[uid]['volition']}\n文思泉涌！本次写文收益 ×1.3，最终收益：{money}\n"
             else:
                 msg += f" >= {data[uid]['volition']}\n"
@@ -924,6 +929,7 @@ class yinpa_Handles():
             money += (data[uid]['strength'] + data[uid]['constitution']) * Utils.dice(500,data[uid]['strength'] + data[uid]['constitution']) / 6
             if money < 0:
                 money = 0
+            money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
             d = Utils.dice(100,data[uid]['constitution'])
             msg += f"体质检定：1d100 = {d} "
@@ -941,6 +947,7 @@ class yinpa_Handles():
             money += (d - 50) * 300
             if money < 0:
                 money = 0
+            money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
             if Utils.dice(10,(int)(uid) ^ 103) <= 3:
                 d = Utils.dice(10,(int)(uid) ^ 104)
