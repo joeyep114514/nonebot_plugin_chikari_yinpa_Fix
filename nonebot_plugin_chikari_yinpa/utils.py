@@ -317,12 +317,12 @@ class Utils:
         f"    体质HP：{user_data['hp_c']}\n"\
         f"    长度：{round(user_data['penis_length'], 2)}\n"\
         f"    深度：{round(user_data['vagina_depth'], 2)}\n"\
-        f"    力量：{user_data['strength']}（当前：{Utils.get_value(uid,'strength')[0]}）\n"\
-        f"    体质：{user_data['constitution']}（当前：{Utils.get_value(uid,'constitution')[0]}）\n"\
-        f"    技巧：{user_data['technique']}（当前：{Utils.get_value(uid,'technique')[0]}）\n"\
-        f"    意志：{user_data['volition']}（当前：{Utils.get_value(uid,'volition')[0]}）\n"\
-        f"    智力：{user_data['intelligence']}\n"\
-        f"    魅力：{user_data['charm']}\n"\
+        f"    力量：{Utils.get_value(uid,'strength')[0]}\n"\
+        f"    体质：{Utils.get_value(uid,'constitution')[0]}\n"\
+        f"    技巧：{Utils.get_value(uid,'technique')[0]}\n"\
+        f"    意志：{Utils.get_value(uid,'volition')[0]}\n"\
+        f"    智力：{Utils.get_value(uid,'intelligence')[0]}\n"\
+        f"    魅力：{Utils.get_value(uid,'charm')[0]}\n"\
         f"    YPD：{await Utils.get_money(uid)}\n"\
         f"    技能：{skill_text}\n"\
         f"    状态：{state_text}\n"\
