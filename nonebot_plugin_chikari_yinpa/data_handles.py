@@ -77,7 +77,7 @@ def _ship_hp_bonus(uid: str):
         if i[0] == 6:
             cooldown = i[1]
             if cooldown is None or cooldown <= time():
-                return int(200 * sqrt(i[2]))
+                return int(100 * sqrt(i[2]))
             break
     return 0
 

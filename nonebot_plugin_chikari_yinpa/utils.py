@@ -528,7 +528,7 @@ class Utils:
         """
         
         if i := Utils.boat(uid):
-            return int(200 * sqrt(i[2]))
+            return int(100 * sqrt(i[2]))
         return 0
 
     def get_hp_v_max(uid: str):
