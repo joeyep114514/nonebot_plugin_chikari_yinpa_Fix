@@ -677,7 +677,7 @@ class Utils:
                     d = min(Utils.dice(30,(int)(uid) ^ 11), 30)
                     DHandles.state_refresh(uid,1,time() + d * 60)
                     DHandles.achievement_set(uid,"A03")
-                    str += f" >= {vol}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                    str += f" >= {vol}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，普通技能失效，诅咒仍生效。如果失神期间受到攻击，失神状态将延长一分钟。）"
                 else:
                     d = Utils.dice(vol,(int)(uid) ^ 12)
                     DHandles.data_set(uid,'hp_v',(d + 10) * 5)

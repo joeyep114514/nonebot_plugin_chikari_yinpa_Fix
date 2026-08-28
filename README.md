@@ -75,7 +75,7 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 | chikari_yinpa_initial_penis_length | 否 | 10 | 初始长度 |
 | chikari_yinpa_initial_vagina_depth | 否 | 10 | 初始深度 |
 | chikari_yinpa_initial_money | 否 | 100 | 初始金钱 |
-| chikari_yinpa_font | 否 | Path(__file__).parent / "resource" / "NotoSansCJK-Regular.ttc" | 绘图所用 Noto Sans CJK 主字体 |
+| chikari_yinpa_font | 否 | Path(__file__).parent / "resource" / "NotoSansCJKsc-VF.ttf" | 绘图所用 Noto Sans CJK 主字体（可变字体，自动应用 Regular 字重） |
 | chikari_yinpa_emoji_font | 否 | Path(__file__).parent / "resource" / "NotoEmoji.ttf" | 绘图所用黑白 Noto Emoji 字体 |
 
 ## 🎉 使用
@@ -117,6 +117,12 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 ## 📝 更新日志
 
 ### v2.1.7
+- 属性模型重构：各属性不再区分基础值与当前值，各类加成直接生效；检定（失神/昏迷/工作检定）与工作收益统一使用增益后的数值
+- 体质与意志的数值上限统一为 80（含各类加成，D10/探险提升同步封顶；吸血鬼种族体质上限 100→80）
+- 商店价格调整：商品1 100→300、商品2 500→800、商品3 100→300（详见商店价格表）
+- 商品3（精力药水）在 HP 已满时禁止购买并提示，避免无效消费
+- Bug 修复：商店按名称购买扣款后崩溃、重复购买商品11仍扣款、舰装破损后等级被重置为1、购买舰装升级书会清除破损冷却、数据文件改为原子写入并在损坏时自动备份恢复、帮助命令非法参数崩溃、商品12效果不落盘等
+- 帮助文本与代码一致性修正：种族属性上限、状态/商品描述公式、失神期间技能失效说明、转账限制说明、指南中的属性与收益说明
 - 技能平衡性调整：
   - 猫化（ID2）攻防加成从 `1d(30√L)` 调整为 `1d(20√L)`
   - 自然之心（ID3）攻防加成从 `1d(智力×√L/2)` 调整为 `1d(智力×√L/3)`

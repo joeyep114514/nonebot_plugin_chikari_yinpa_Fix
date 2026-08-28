@@ -784,6 +784,7 @@ class yinpa_Handles():
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
         command = args.extract_plain_text()
         shop_key = command.split()
+        await Utils.refresh_data(uid)
         if not shop_key:
             str = ""
             for i in list(dicts.shop_dict.keys()):
@@ -810,6 +811,11 @@ class yinpa_Handles():
                 resolved.append(rid)
             if 11 in resolved and Utils.get_skill(uid,9):
                 await matcher.finish("错误：你已经拥有【屹立不倒】，不能重复购买！")
+            if 3 in resolved:
+                hp = Utils.get_value(uid,"hp")
+                hp_max = Utils.get_hp_c_max(uid) if hp[1] else Utils.get_hp_v_max(uid)
+                if hp[0] >= hp_max:
+                    await matcher.finish(f"错误：你的HP已满（{int(hp[0])}/{hp_max}），无需购买精力药水！")
             current_money = await Utils.get_money(uid)
             if current_money < price:
                 await matcher.finish(f"错误：你的 YPD 并不够买这些商品！\n这些商品的总售价：{price}\n你的 YPD：{current_money}")
@@ -897,7 +903,7 @@ class yinpa_Handles():
                 d = min(Utils.dice(30,(int)(uid) ^ 100), 30)
                 DHandles.state_refresh(uid,1,time() + d * 60)
                 DHandles.achievement_set(uid,"A03")
-                msg += f" >= {vo}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                msg += f" >= {vo}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，普通技能失效，诅咒仍生效。如果失神期间受到攻击，失神状态将延长一分钟。）"
             else:
                 msg += f" < {vo}\n"
         elif work_key == 3:
