@@ -187,7 +187,9 @@ class DHandles():
         final = {}
         for i in range(6):
             inc = int(pts[i] * rate[i])  # 体质/意志 2:1（配合偶数校验后无小数）
-            final[keys[i]] = min(spec["base"][i] + inc, spec["cap"][i])
+            total = spec["base"][i] + inc
+            # cap 为 None 表示该属性无上限（力量/技巧/智力/魅力），仅体质/意志封顶 80
+            final[keys[i]] = total if spec["cap"][i] is None else min(total, spec["cap"][i])
         plugin_config = _get_plugin_config()
         global data
         data[uid] = {
