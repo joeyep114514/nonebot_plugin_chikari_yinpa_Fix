@@ -8,6 +8,8 @@ jobs:
   pypi-publish:
     name: Upload release to PyPI
     runs-on: ubuntu-latest
+    # 仅在推送到主分支或打 tag 时发布，避免 PR/功能分支推送重复上传同名版本到 PyPI 而失败
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     permissions:
       id-token: write
     steps:
