@@ -290,8 +290,8 @@ class Utils:
         f"    种族：{dicts.species_dict[user_data['species']]}\n"\
         f"    意志HP：{user_data['hp_v']}\n"\
         f"    体质HP：{user_data['hp_c']}\n"\
-        f"    长度：{user_data['penis_length']}\n"\
-        f"    深度：{user_data['vagina_depth']}\n"\
+        f"    长度：{round(user_data['penis_length'], 2)}\n"\
+        f"    深度：{round(user_data['vagina_depth'], 2)}\n"\
         f"    力量：{user_data['strength']}（当前：{Utils.get_value(uid,'strength')[0]}）\n"\
         f"    体质：{user_data['constitution']}（当前：{Utils.get_value(uid,'constitution')[0]}）\n"\
         f"    技巧：{user_data['technique']}（当前：{Utils.get_value(uid,'technique')[0]}）\n"\
@@ -543,7 +543,7 @@ class Utils:
             value = data[uid]['charm']
         if value < 0:
             value = 0
-        return [value,b]
+        return [round(value, 2),b]
 
     async def get_attack_list(uid: str,target: str):
         """获取用户对目标造成的伤害
@@ -799,7 +799,7 @@ class Utils:
             if d == 1:
                 d = Utils.dice(10,131)
                 actual = Utils.d10_apply(uid,'penis_length',d * 0.1)
-                new_value = data[uid]['penis_length'] + actual
+                new_value = round(data[uid]['penis_length'] + actual, 2)
                 str += f"1d10 = {d}\n长度：{data[uid]['penis_length']} → {new_value}"
                 if actual < d * 0.1:
                     str += "（已达D10预算上限）"
@@ -807,7 +807,7 @@ class Utils:
             elif d == 2:
                 d = Utils.dice(10,132)
                 actual = Utils.d10_apply(uid,'vagina_depth',d * 0.1)
-                new_value = data[uid]['vagina_depth'] + actual
+                new_value = round(data[uid]['vagina_depth'] + actual, 2)
                 str += f"1d10 = {d}\n深度：{data[uid]['vagina_depth']} → {new_value}"
                 if actual < d * 0.1:
                     str += "（已达D10预算上限）"
@@ -885,13 +885,13 @@ class Utils:
                 if d == 1:
                     d = Utils.dice(100,131)
                     actual = Utils.d10_apply(uid,'penis_length',d * 0.1 * si)
-                    new_value = data[uid]['penis_length'] + actual
+                    new_value = round(data[uid]['penis_length'] + actual, 2)
                     str += f"1d100 = {d}\n长度：{data[uid]['penis_length']} → {new_value}"
                     DHandles.data_set(uid,'penis_length',new_value)
                 elif d == 2:
                     d = Utils.dice(100,132)
                     actual = Utils.d10_apply(uid,'vagina_depth',d * 0.1 * si)
-                    new_value = data[uid]['vagina_depth'] + actual
+                    new_value = round(data[uid]['vagina_depth'] + actual, 2)
                     str += f"1d100 = {d}\n深度：{data[uid]['vagina_depth']} → {new_value}"
                     DHandles.data_set(uid,'vagina_depth',new_value)
                 elif d == 3:
