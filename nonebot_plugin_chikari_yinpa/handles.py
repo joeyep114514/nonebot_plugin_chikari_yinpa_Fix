@@ -752,6 +752,28 @@ class yinpa_Handles():
         rh_str = Utils.reduce_hp(uid,d)
         await matcher.finish(f"{data[uid]['name']}扣了一次\n" + vd_str + "\n" + hp_str + rh_str)
 
+    @staticmethod
+    def _shop_list_text(header: str = "") -> str:
+        """生成银趴商店列表文本（与钓鱼插件商店格式一致：▶ 条目 + 底部操作提示）
+
+        Args:
+            header (str): 可选的前置文本（如错误提示行）
+
+        Returns:
+            str: 商店列表文本
+        """
+        
+        lines = ["===== 银趴商店 =====", ""]
+        for i in list(dicts.shop_dict.keys()):
+            lines.append(f"▶ {i}. {dicts.shop_dict[i]}：{dicts.shop_price_dict[i]} YPD")
+        lines.append("")
+        lines.append("详情：/yinpa_help shop <商品名或ID>")
+        lines.append("购买：/ypshop <商品名或ID>（多个用空格分隔）")
+        text = "\n".join(lines)
+        if header:
+            text = header + "\n" + text
+        return text
+
     async def yinpa_shop(
             matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
     ):
@@ -767,10 +789,7 @@ class yinpa_Handles():
         shop_key = command.split()
         await Utils.refresh_data(uid)
         if not shop_key:
-            str = ""
-            for i in list(dicts.shop_dict.keys()):
-                str += f"{i}：{dicts.shop_dict[i]} 售价：{dicts.shop_price_dict[i]}\n"
-            await matcher.finish(MessageSegment.image(Utils.text_to_image("可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
+            await matcher.finish(MessageSegment.image(Utils.text_to_image(yinpa_Handles._shop_list_text())))
         else:
             goods = shop_key
             resolved = []
@@ -784,10 +803,7 @@ class yinpa_Handles():
                     if not dicts.shop_dict.get(rid):
                         rid = None
                 if rid is None:
-                    str = ""
-                    for j in list(dicts.shop_dict.keys()):
-                        str += f"{j}：{dicts.shop_dict[j]} 售价：{dicts.shop_price_dict[j]}\n"
-                    await matcher.finish(MessageSegment.image(Utils.text_to_image("错误：该商品不存在\n可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
+                    await matcher.finish(MessageSegment.image(Utils.text_to_image(yinpa_Handles._shop_list_text("错误：该商品不存在"))))
                 price += dicts.shop_price_dict[rid]
                 resolved.append(rid)
             if 11 in resolved and Utils.get_skill(uid,9):

@@ -262,11 +262,14 @@ class Utils:
             for character in line:
                 line_width += _char_width(character)
             line_widths.append(line_width)
-        image = Image.new("RGB", (max(1, int(max(line_widths, default=0))), len(liens) * (fontSize + 5)), (255, 255, 255))
+        # 四周留白，避免文字贴边（与钓鱼插件渲染保持一致的观感）
+        padding_x = 12
+        padding_y = 8
+        image = Image.new("RGB", (max(1, int(max(line_widths, default=0))) + padding_x * 2, len(liens) * (fontSize + 5) + padding_y * 2), (255, 255, 255))
         draw = ImageDraw.Draw(image)
         for line_number, line in enumerate(liens):
-            x = 0
-            y = line_number * (fontSize + 5)
+            x = padding_x
+            y = padding_y + line_number * (fontSize + 5)
             for character in line:
                 if Utils._is_emoji(character):
                     x += Utils._draw_emoji(image, int(x), y, character, emoji_font, emoji_scale)
