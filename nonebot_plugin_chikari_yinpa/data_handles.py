@@ -205,6 +205,7 @@ class DHandles():
             'intelligence':final["intelligence"],
             'charm':final["charm"],
             'state':[],
+            'skill':[],
             "passive_times":0,
             "active_times":0,
             "last_sign_in_time":0,

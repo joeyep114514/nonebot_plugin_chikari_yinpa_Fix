@@ -641,8 +641,9 @@ class Utils:
         if i := Utils.get_skill(target,14):
             atk.append([50 * i[2],f"{data[target]['name']}：敏感",False])
         if i := Utils.get_skill(target,15):
-            if Utils.dice(100,i[2] * 15) < 30:
-                atk.append([300,f"{data[target]['name']}：弱点",True])
+            # 弱点：受击时1d100，小于30√L则额外受到1d500伤害（等级影响触发概率）
+            if Utils.dice(100,i[2] * 15) < 30 * sqrt(i[2]):
+                atk.append([500,f"{data[target]['name']}：弱点",False])
         
         if i := Utils.get_skill(target,2):
             atk.append([-20 * sqrt(i[2]),f"{data[target]['name']}：猫化",False])
