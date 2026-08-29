@@ -68,6 +68,23 @@ else:
 if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
     data["_work_cooldown"] = {}
 
+# 数据迁移：旧版本用户数据缺少 skill 字段，统一补齐为空列表，
+# 避免升级后 refresh_data / get_skill / skill_refresh 等直接索引崩溃
+# 注意：跳过 _ 前缀的内部字段（_work_cooldown 也是 dict，但不是用户记录）
+_skill_migrated = False
+for _uid, _ud in data.items():
+    if _uid.startswith("_"):
+        continue
+    if isinstance(_ud, dict) and "skill" not in _ud:
+        _ud["skill"] = []
+        _skill_migrated = True
+if _skill_migrated:
+    _tmp = plugin_data_file.parent / (plugin_data_file.name + ".tmp")
+    with open(_tmp, 'w', encoding='utf-8') as _f:
+        json.dump(data, _f, indent=4, ensure_ascii=False)
+    os.replace(_tmp, plugin_data_file)
+    print(f"[Chikari_Yinpa] 已为存量用户数据补齐 skill 字段并写回文件")
+
 #配置数据文件初始化及载入
 
 if not plugin_config_file.exists() or plugin_config_file.stat().st_size == 0:
@@ -287,7 +304,8 @@ class DHandles():
         
         global data
         b = False
-        skills = data[uid]["skill"]
+        # setdefault 保证原地修改（append/remove）作用于 data 中的真实列表
+        skills = data[uid].setdefault("skill", [])
         if id == 9:
             level = 1
             mode = ''

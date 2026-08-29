@@ -296,7 +296,7 @@ class Utils:
         user_data = data[uid]
         skill_text = ""
         state_text = ""
-        for i in user_data["skill"]:
+        for i in user_data.get("skill", []):
             if i[0] == 6 and i[1] and i[1] >= time():
                 skill_text += "\n    ——" + dicts.skill_dict[i[0]] + f'（等级：{i[2]}）（舰装损坏，{(int)(i[1] - time())}秒后修复）' + '；'
             else:
@@ -396,7 +396,7 @@ class Utils:
         """
         
         b = False
-        for i in data[uid]["skill"]:
+        for i in data[uid].get("skill", []):
             if len(i) <= 2:
                 DHandles.skill_refresh(uid,i[0],i[1])
         for i in data[uid]["state"]:
@@ -441,7 +441,7 @@ class Utils:
         """
         
         s = []
-        for i in data[uid]["skill"]:
+        for i in data[uid].get("skill", []):
             if i[0] == id:
                 s = i
             if len(i) <= 2:
@@ -836,7 +836,7 @@ class Utils:
         elif id == 7:
             str += DHandles.skill_refresh(uid,5,level = 1,mode = 'add')
         elif id == 8:
-            cur = next((s for s in data[uid]["skill"] if s[0] == 6), None)
+            cur = next((s for s in data[uid].get("skill", []) if s[0] == 6), None)
             str += DHandles.skill_refresh(uid,6,cur[1] if cur else None,level = 1,mode = 'add')
         elif id == 9:
             str += DHandles.skill_refresh(uid,7,level = 1,mode = 'add')
@@ -849,7 +849,7 @@ class Utils:
             str += DHandles.skill_refresh(uid,9,level = 1,mode = 'add')
             DHandles.achievement_set(uid,"D04")
         elif id == 12:
-            DHandles.data_set(uid,"skill",[i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15]])
+            DHandles.data_set(uid,"skill",[i for i in data[uid].get("skill", []) if i[0] not in [10,11,12,13,14,15]])
             str += "已清除所有诅咒\n"
         elif id == 13:
             d = Utils.dice(10,13)
@@ -858,7 +858,7 @@ class Utils:
                 pool.remove(9)
             sk = choice(pool)
             str += f"1d10 = {d}\n"
-            cur = next((s for s in data[uid]["skill"] if s[0] == sk), None)
+            cur = next((s for s in data[uid].get("skill", []) if s[0] == sk), None)
             str += DHandles.skill_refresh(uid,sk,cur[1] if cur else None,level = 5 + d,mode = 'add')
             DHandles.data_set(uid,'pandora_count',data[uid].get('pandora_count',0) + 1)
         elif id == 14:
