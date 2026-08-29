@@ -100,10 +100,31 @@ class Utils:
         Args:
             uid (str): 用户id
         """
-        
+
         DHandles.data_set(uid,"last_operation_time",(int)(time()/60))
         return
-    
+
+    @staticmethod
+    def safe_int(s, default=None):
+        """安全整数转换
+
+        str.isdigit() 对上标（²）、带圈数字（①）等 Unicode 字符返回 True，
+        但 int() 会抛 ValueError 导致命令无响应，因此所有用户输入的数字参数
+        统一通过本方法解析，失败时返回 default 而非抛异常。
+
+        Args:
+            s (str): 待转换的字符串
+            default: 转换失败时的返回值（默认 None）
+
+        Returns:
+            int | default: 转换结果
+        """
+
+        try:
+            return int(s)
+        except (ValueError, TypeError):
+            return default
+
     _dice_counter = 0
     def dice(d:int,_seed):
         """骰子
@@ -644,9 +665,9 @@ class Utils:
         if i := Utils.get_skill(target,14):
             atk.append([50 * i[2],f"{data[target]['name']}：敏感",False])
         if i := Utils.get_skill(target,15):
-            # 弱点：受击时1d100，小于30√L则额外受到1d500伤害（等级影响触发概率）
+            # 弱点（诅咒）：受击时1d100，小于30√L则额外受到1d500伤害（等级影响触发概率，伤害掷骰）
             if Utils.dice(100,i[2] * 15) < 30 * sqrt(i[2]):
-                atk.append([500,f"{data[target]['name']}：弱点",False])
+                atk.append([Utils.dice(500,i[2]),f"{data[target]['name']}：弱点",False])
         
         if i := Utils.get_skill(target,2):
             atk.append([-20 * sqrt(i[2]),f"{data[target]['name']}：猫化",False])
@@ -822,11 +843,15 @@ class Utils:
         elif id == 3:
             hp = Utils.get_value(uid,"hp")
             if hp[1]:
-                DHandles.data_set(uid,"hp_c",data[uid]["hp_c"] + 100)
-                str += "体质HP增加了100\n"
+                old_hp = data[uid]["hp_c"]
+                new_hp = min(old_hp + 100, Utils.get_hp_c_max(uid))
+                DHandles.data_set(uid,"hp_c",new_hp)
+                str += f"体质HP：{old_hp} → {new_hp}\n"
             else:
-                DHandles.data_set(uid,"hp_v",data[uid]["hp_v"] + 100)
-                str += "意志HP增加了100\n"
+                old_hp = data[uid]["hp_v"]
+                new_hp = min(old_hp + 100, Utils.get_hp_v_max(uid))
+                DHandles.data_set(uid,"hp_v",new_hp)
+                str += f"意志HP：{old_hp} → {new_hp}\n"
         elif id == 4:
             str += DHandles.skill_refresh(uid,2,level = 1,mode = 'add')
         elif id == 5:

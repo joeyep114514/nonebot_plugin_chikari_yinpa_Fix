@@ -170,9 +170,10 @@ class yinpa_Handles():
             text (str): 用户回复的文本
         """
         
-        if not text.isdigit():
+        # isdigit() 对上标（²）等误判为数字但 int() 会抛错，统一走 safe_int
+        species = Utils.safe_int(text)
+        if species is None:
             await matcher.finish("参数错误！\n请回复对应种族序号（0随机 1人类 2猫娘 3精灵 4天使 5魅魔 6舰娘 7吸血鬼）")
-        species: int = int(text)
         if species < 0 or species > 7:
             await matcher.finish("参数错误！\n不存在指定的种族\n种族列表参照： /yinpa_help 种族 ")
         if species == 0:
@@ -355,8 +356,8 @@ class yinpa_Handles():
         elif help_key[0] == 'species':
             if len(help_key) >= 2 and dicts.species_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[help_key[1]])))
-            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.species_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[dicts.species_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.species_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[dicts.species_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.species_dict.keys()):
@@ -365,8 +366,8 @@ class yinpa_Handles():
         elif help_key[0] == "skill":
             if len(help_key) >= 2 and dicts.skill_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[help_key[1]])))
-            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.skill_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[dicts.skill_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.skill_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[dicts.skill_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.skill_dict.keys()):
@@ -375,8 +376,8 @@ class yinpa_Handles():
         elif help_key[0] == 'state':
             if len(help_key) >= 2 and dicts.state_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[help_key[1]])))
-            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.state_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[dicts.state_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.state_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[dicts.state_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.state_dict.keys()):
@@ -385,8 +386,8 @@ class yinpa_Handles():
         elif help_key[0] == "shop":
             if len(help_key) >= 2 and dicts.shop_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[help_key[1]])))
-            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.shop_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[dicts.shop_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.shop_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[dicts.shop_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.shop_dict.keys()):
@@ -395,8 +396,8 @@ class yinpa_Handles():
         elif help_key[0] == "work":
             if len(help_key) >= 2 and dicts.work_dict.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[help_key[1]])))
-            elif len(help_key) >= 2 and help_key[1].isdigit() and dicts.work_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[dicts.work_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.work_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[dicts.work_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.work_dict.keys()):
@@ -798,8 +799,7 @@ class yinpa_Handles():
                 rid = None
                 if i in list(dicts.shop_dict.values()):
                     rid = (list(dicts.shop_dict.keys()))[(list(dicts.shop_dict.values())).index(i)]
-                elif i.isdigit():
-                    rid = int(i)
+                elif (rid := Utils.safe_int(i)) is not None:
                     if not dicts.shop_dict.get(rid):
                         rid = None
                 if rid is None:
@@ -808,6 +808,9 @@ class yinpa_Handles():
                 resolved.append(rid)
             if 11 in resolved and Utils.get_skill(uid,9):
                 await matcher.finish("错误：你已经拥有【屹立不倒】，不能重复购买！")
+            # 屹立不倒为固定1级技能，单次购买列表中重复会出现"第二个被拒绝但已扣款"，提前拦截
+            if resolved.count(11) > 1:
+                await matcher.finish("错误：【屹立不倒】不可重复购买，一次只能购买一个！")
             if 3 in resolved:
                 hp = Utils.get_value(uid,"hp")
                 hp_max = Utils.get_hp_c_max(uid) if hp[1] else Utils.get_hp_v_max(uid)
@@ -842,7 +845,9 @@ class yinpa_Handles():
                 msg += f"{i}：{dicts.work_dict[i]}\n"
             await matcher.finish(MessageSegment.image(Utils.text_to_image("可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")))
         work_key = work_key[0]
-        if not dicts.work_dict.get(work_key) and not dicts.work_help_dict.get(work_key) and not dicts.work_dict.get(int(work_key)):
+        # 非数字参数不能直接 int()（会抛 ValueError 导致命令无响应）；
+        # 且 isdigit() 对上标（²）、带圈数字（①）等误判为数字，int() 同样抛错，统一改用 safe_int
+        if not dicts.work_help_dict.get(work_key) and not ((wid := Utils.safe_int(work_key)) is not None and dicts.work_dict.get(wid)):
             msg = ""
             for i in list(dicts.work_dict.keys()):
                 msg += f"{i}：{dicts.work_dict[i]}"
@@ -964,14 +969,14 @@ class yinpa_Handles():
             else:
                 msg += f" < {co}\n"
         elif work_key == 6:
-            # 探险：彩票（成功概率50%，事件触发率30%）
+            # 探险：彩票（成功概率50%，事件触发率10%）
             d = Utils.dice(100,(int)(uid) ^ 102)
             money += (d - 50) * 300
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            if Utils.dice(10,(int)(uid) ^ 103) <= 3:
+            if Utils.dice(10,(int)(uid) ^ 103) <= 1:
                 d = Utils.dice(10,(int)(uid) ^ 104)
                 if d >= 1 and d <= 3:
                     keys = ['strength','constitution','technique','volition','intelligence','charm']
@@ -1021,10 +1026,9 @@ class yinpa_Handles():
         arg_list: list = command.split()
         if not arg_list:
             await matcher.finish("错误：参数错误！\n命令：/transfer <金额> <@某人 或 银趴昵称>")
-        if not arg_list[0].isdigit():
-            await matcher.finish("错误：金额必须为正整数！")
-        amount = int(arg_list[0])
-        if amount <= 0:
+        # isdigit() 对上标（²）等误判为数字但 int() 会抛错，统一走 safe_int
+        amount = Utils.safe_int(arg_list[0])
+        if amount is None or amount <= 0:
             await matcher.finish("错误：金额必须为正整数！")
         if not at:
             f_uid = None
