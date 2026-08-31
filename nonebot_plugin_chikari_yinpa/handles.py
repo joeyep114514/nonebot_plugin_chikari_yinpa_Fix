@@ -150,33 +150,14 @@ class yinpa_Handles():
         
         spec = dicts.species_initial_ability[species]
         base = spec["base"]
-        cap = spec["cap"]
         free = spec["free_pts"]
         spname = dicts.species_dict[species]
-        return (f"您选择了【{spname}】。\n\n"
-                "各属性作用一览：\n"
-                "力量  —— 主要提升打工(搬砖/打架)收益，并参与伤害计算\n"
-                "体质  —— 提供体质HP(体质+10)×10，决定承伤上限与昏迷抗性\n"
-                "技巧  —— 本对战伤害的主要来源，决定出手力度\n"
-                "意志  —— 提供意志HP(意志+10)×5，平时受击先扣这个，决定生存能力\n"
-                "智力  —— 影响自然之心/舰装等技能强度，与直播/写文收益相关\n"
-                "魅力  —— 影响直播/援交收益，并可压制对手\n\n"
-                "属性上限(所有种族一致)：\n"
-                f"力量{cap[0]} 体质{cap[1]} 技巧{cap[2]} 意志{cap[3]} 智力{cap[4]} 魅力{cap[5]}\n\n"
-                "种族基础属性：您当前各项起始值为\n"
-                f"力量{base[0]}  体质{base[1]}  技巧{base[2]}\n"
-                f"意志{base[3]}  智力{base[4]}  魅力{base[5]}\n"
-                "(基础属性由种族决定，加点是在此之上继续累加，最终属性 = 基础属性 + 加点增量，不能超过上限)\n\n"
-                f"您获得自由属性点 {free}。\n"
-                "分配逻辑：1自由属性点可兑换\n"
-                "    +1  力量/技巧/智力/魅力 ；\n"
-                "    +1  体质/意志 需要 2 自由点（体质/意志请填偶数）。\n"
-                "注意：点数只够专精几项，无法六项全满，请想清楚取舍方向。\n"
-                "请按格式 \"**/**/**/**/**/**\" 回复已进行对应属性点分配\n"
-                "（顺序：力量/体质/技巧/意志/智力/魅力）。\n"
-                "** 为分配给该属性的自由属性点数（不是最终属性值，也不是增量），\n"
-                "体质/意志必须为偶数；例：85/0/85/0/0/0 = 共分配170点。\n"
-                "若回复\"随机\"，将在自由点内自动随机分配。")
+        return (f"您选择了【{spname}】\n"
+                f"基础属性：力量{base[0]} 体质{base[1]} 技巧{base[2]} 意志{base[3]} 智力{base[4]} 魅力{base[5]}\n"
+                f"自由属性点：{free}（加点在此之上累加）\n"
+                "加点规则：1点=+1力量/技巧/智力/魅力；2点=+1体质/意志（须填偶数）；体质/意志上限80，其余无上限\n"
+                "属性作用：力量→打工与伤害；体质→体质HP与承伤；技巧→对战伤害；意志→意志HP与生存；智力→部分技能与直播/写文收益；魅力→直播/援交收益\n"
+                "请按 \"**/**/**/**/**/**\"（力量/体质/技巧/意志/智力/魅力）回复分配自由点数（非最终属性值），例：85/0/85/0/0/0，或回复\"随机\"自动分配")
 
     @staticmethod
     async def _join_pick_species(matcher: Matcher, uid: str, pj: dict, text: str):
@@ -189,9 +170,10 @@ class yinpa_Handles():
             text (str): 用户回复的文本
         """
         
-        if not text.isdigit():
+        # isdigit() 对上标（²）等误判为数字但 int() 会抛错，统一走 safe_int
+        species = Utils.safe_int(text)
+        if species is None:
             await matcher.finish("参数错误！\n请回复对应种族序号（0随机 1人类 2猫娘 3精灵 4天使 5魅魔 6舰娘 7吸血鬼）")
-        species: int = int(text)
         if species < 0 or species > 7:
             await matcher.finish("参数错误！\n不存在指定的种族\n种族列表参照： /yinpa_help 种族 ")
         if species == 0:
@@ -233,7 +215,7 @@ class yinpa_Handles():
             return f"六项点数之和（{sum(parts)}）超过自由属性点上限（{free}）"
         for i in range(6):
             inc = parts[i] if rate[i] == 1 else int(parts[i] * rate[i])
-            if base[i] + inc > cap[i]:
+            if cap[i] is not None and base[i] + inc > cap[i]:
                 return f"「{names[i]}」分配过多：基础{base[i]} + 增量{inc} 超过属性上限{cap[i]}"
         return parts
 
@@ -262,7 +244,7 @@ class yinpa_Handles():
                 step = 1 if cost[i] == 1 else 2
                 if cost[i] > remaining:
                     continue
-                if base[i] + (pts[i] + step) * rate[i] <= cap[i]:
+                if cap[i] is None or base[i] + (pts[i] + step) * rate[i] <= cap[i]:
                     cand.append(i)
             if not cand:
                 break
@@ -374,8 +356,8 @@ class yinpa_Handles():
         elif help_key[0] == 'species':
             if len(help_key) >= 2 and dicts.species_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.species_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[dicts.species_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.species_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.species_help[dicts.species_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.species_dict.keys()):
@@ -384,8 +366,8 @@ class yinpa_Handles():
         elif help_key[0] == "skill":
             if len(help_key) >= 2 and dicts.skill_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.skill_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[dicts.skill_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.skill_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.skill_help[dicts.skill_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.skill_dict.keys()):
@@ -394,8 +376,8 @@ class yinpa_Handles():
         elif help_key[0] == 'state':
             if len(help_key) >= 2 and dicts.state_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.state_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[dicts.state_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.state_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.state_help[dicts.state_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.state_dict.keys()):
@@ -404,8 +386,8 @@ class yinpa_Handles():
         elif help_key[0] == "shop":
             if len(help_key) >= 2 and dicts.shop_help.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.shop_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[dicts.shop_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.shop_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.shop_help[dicts.shop_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.shop_dict.keys()):
@@ -414,8 +396,8 @@ class yinpa_Handles():
         elif help_key[0] == "work":
             if len(help_key) >= 2 and dicts.work_dict.get(help_key[1]):
                 await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[help_key[1]])))
-            elif len(help_key) >= 2 and dicts.work_dict.get(int(help_key[1])):
-                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[dicts.work_dict[int(help_key[1])]])))
+            elif len(help_key) >= 2 and (v := Utils.safe_int(help_key[1])) is not None and dicts.work_dict.get(v):
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(dicts.work_help_dict[dicts.work_dict[v]])))
             else:
                 str = ""
                 for i in list(dicts.work_dict.keys()):
@@ -771,6 +753,28 @@ class yinpa_Handles():
         rh_str = Utils.reduce_hp(uid,d)
         await matcher.finish(f"{data[uid]['name']}扣了一次\n" + vd_str + "\n" + hp_str + rh_str)
 
+    @staticmethod
+    def _shop_list_text(header: str = "") -> str:
+        """生成银趴商店列表文本（与钓鱼插件商店格式一致：▶ 条目 + 底部操作提示）
+
+        Args:
+            header (str): 可选的前置文本（如错误提示行）
+
+        Returns:
+            str: 商店列表文本
+        """
+        
+        lines = ["===== 银趴商店 =====", ""]
+        for i in list(dicts.shop_dict.keys()):
+            lines.append(f"▶ {i}. {dicts.shop_dict[i]}：{dicts.shop_price_dict[i]} YPD")
+        lines.append("")
+        lines.append("详情：/yinpa_help shop <商品名或ID>")
+        lines.append("购买：/ypshop <商品名或ID>（多个用空格分隔）")
+        text = "\n".join(lines)
+        if header:
+            text = header + "\n" + text
+        return text
+
     async def yinpa_shop(
             matcher: Matcher,event: GroupMessageEvent,args: Message = CommandArg()
     ):
@@ -784,32 +788,41 @@ class yinpa_Handles():
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
         command = args.extract_plain_text()
         shop_key = command.split()
+        await Utils.refresh_data(uid)
         if not shop_key:
-            str = ""
-            for i in list(dicts.shop_dict.keys()):
-                str += f"{i}：{dicts.shop_dict[i]} 售价：{dicts.shop_price_dict[i]}\n"
-            await matcher.finish(MessageSegment.image(Utils.text_to_image("可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
+            await matcher.finish(MessageSegment.image(Utils.text_to_image(yinpa_Handles._shop_list_text())))
         else:
             goods = shop_key
+            resolved = []
             price = 0
             for i in goods:
-                if not dicts.shop_dict.get(i) and not dicts.shop_help.get(i) and not dicts.shop_dict.get(int(i)):
-                    str = ""
-                    for j in list(dicts.shop_dict.keys()):
-                        str += f"{j}：{dicts.shop_dict[j]} 售价：{dicts.shop_price_dict[j]}\n"
-                    await matcher.finish(MessageSegment.image(Utils.text_to_image("错误：该商品不存在\n可用商品：\n" + str + "\n输入/yinpa_help shop [商品名或商品ID] 以查看商品描述")))
+                rid = None
                 if i in list(dicts.shop_dict.values()):
-                    i = (list(dicts.shop_dict.keys()))[(list(dicts.shop_dict.values())).index(i)]
-                i = int(i)
-                price += dicts.shop_price_dict[i]
+                    rid = (list(dicts.shop_dict.keys()))[(list(dicts.shop_dict.values())).index(i)]
+                elif (rid := Utils.safe_int(i)) is not None:
+                    if not dicts.shop_dict.get(rid):
+                        rid = None
+                if rid is None:
+                    await matcher.finish(MessageSegment.image(Utils.text_to_image(yinpa_Handles._shop_list_text("错误：该商品不存在"))))
+                price += dicts.shop_price_dict[rid]
+                resolved.append(rid)
+            if 11 in resolved and Utils.get_skill(uid,9):
+                await matcher.finish("错误：你已经拥有【屹立不倒】，不能重复购买！")
+            # 屹立不倒为固定1级技能，单次购买列表中重复会出现"第二个被拒绝但已扣款"，提前拦截
+            if resolved.count(11) > 1:
+                await matcher.finish("错误：【屹立不倒】不可重复购买，一次只能购买一个！")
+            if 3 in resolved:
+                hp = Utils.get_value(uid,"hp")
+                hp_max = Utils.get_hp_c_max(uid) if hp[1] else Utils.get_hp_v_max(uid)
+                if hp[0] >= hp_max:
+                    await matcher.finish(f"错误：你的HP已满（{int(hp[0])}/{hp_max}），无需购买精力药水！")
             current_money = await Utils.get_money(uid)
             if current_money < price:
                 await matcher.finish(f"错误：你的 YPD 并不够买这些商品！\n这些商品的总售价：{price}\n你的 YPD：{current_money}")
             await Utils.add_money(uid, -price)
             str = ""
-            for i in goods:
-                i = int(i)
-                str += await Utils.gain_item(uid,i)
+            for rid in resolved:
+                str += await Utils.gain_item(uid,rid)
             await matcher.finish(MessageSegment.image(Utils.text_to_image(str)))
 
     async def yinpa_work(
@@ -832,7 +845,9 @@ class yinpa_Handles():
                 msg += f"{i}：{dicts.work_dict[i]}\n"
             await matcher.finish(MessageSegment.image(Utils.text_to_image("可用工作：\n" + msg + "\n输入/yinpa_help work [工作名或工作ID] 以查看工作描述")))
         work_key = work_key[0]
-        if not dicts.work_dict.get(work_key) and not dicts.work_help_dict.get(work_key) and not dicts.work_dict.get(int(work_key)):
+        # 非数字参数不能直接 int()（会抛 ValueError 导致命令无响应）；
+        # 且 isdigit() 对上标（²）、带圈数字（①）等误判为数字，int() 同样抛错，统一改用 safe_int
+        if not dicts.work_help_dict.get(work_key) and not ((wid := Utils.safe_int(work_key)) is not None and dicts.work_dict.get(wid)):
             msg = ""
             for i in list(dicts.work_dict.keys()):
                 msg += f"{i}：{dicts.work_dict[i]}"
@@ -850,8 +865,10 @@ class yinpa_Handles():
         msg = ""
         money = 0.0
         if work_key == 1:
-            # 搬砖：勤能补拙（基础属性 + 1d500，累计次数递减加成，封顶 +25%）
-            money += (data[uid]['strength'] + data[uid]['constitution']) * Utils.dice(500,data[uid]['strength'] + data[uid]['constitution']) / 8
+            # 搬砖：勤能补拙（当前属性 + 1d500，累计次数递减加成，封顶 +25%）
+            st = Utils.get_value(uid,'strength')[0]
+            co = Utils.get_value(uid,'constitution')[0]
+            money += (st + co) * Utils.dice(500,st + co) / 8
             brick_count = data[uid].get('brick_count',0)
             multiplier = 1 + 0.25 * (1 - exp(-brick_count / 15))
             money *= multiplier
@@ -862,35 +879,40 @@ class yinpa_Handles():
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
             msg += f"搬砖经验累积！本次搬砖收入 ×{round(multiplier,3)}\n"
         elif work_key == 2:
-            # 援交：基础属性 + 1d500，榨精心得检定 + 意志检定失神
-            money += (data[uid]['technique'] * 0.7 + data[uid]['charm'] * 0.9) * Utils.dice(500,data[uid]['technique'] + data[uid]['charm']) / 6
+            # 援交：当前属性 + 1d500，榨精心得检定 + 意志检定失神
+            te = Utils.get_value(uid,'technique')[0]
+            ch = Utils.get_value(uid,'charm')[0]
+            vo = Utils.get_value(uid,'volition')[0]
+            money += (te * 0.7 + ch * 0.9) * Utils.dice(500,te + ch) / 6
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(400,data[uid]['technique'] + data[uid]['charm'])
+            d = Utils.dice(400,te + ch)
             msg += f"榨精心得检定：1d400 = {d} "
-            if d < (data[uid]['technique'] + data[uid]['charm']):
+            if d < (te + ch):
                 if Utils.get_state(uid,4):
-                    msg += f" < {data[uid]['technique'] + data[uid]['charm']}\n你已拥有【榨精心得】，本次不再重复获得。\n"
+                    msg += f" < {te + ch}\n你已拥有【榨精心得】，本次不再重复获得。\n"
                 else:
                     DHandles.state_refresh(uid,4,time() + 315360000)
-                    msg += f" < {data[uid]['technique'] + data[uid]['charm']}\n获得状态：【榨精心得】（ID：4），作为主动方时额外造成对方当前HP的10%。\n"
+                    msg += f" < {te + ch}\n获得状态：【榨精心得】（ID：4），作为主动方时额外造成对方当前HP的10%。\n"
             else:
-                msg += f" >= {data[uid]['technique'] + data[uid]['charm']}\n"
-            d = Utils.dice(100,data[uid]['volition'])
+                msg += f" >= {te + ch}\n"
+            d = Utils.dice(100,vo)
             msg += f"意志检定：1d100 = {d} "
-            if d >= data[uid]['volition']:
+            if d >= vo:
                 DHandles.data_set(uid,"hp_v",0)
                 d = min(Utils.dice(30,(int)(uid) ^ 100), 30)
                 DHandles.state_refresh(uid,1,time() + d * 60)
                 DHandles.achievement_set(uid,"A03")
-                msg += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                msg += f" >= {vo}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，普通技能失效，诅咒仍生效。如果失神期间受到攻击，失神状态将延长一分钟。）"
             else:
-                msg += f" < {data[uid]['volition']}\n"
+                msg += f" < {vo}\n"
         elif work_key == 3:
             # 直播：连续开播（2小时未直播或做过其他工作即断链）
-            money += (data[uid]['intelligence'] + data[uid]['charm']) * Utils.dice(500,data[uid]['intelligence'] + data[uid]['charm']) / 8
+            il = Utils.get_value(uid,'intelligence')[0]
+            ch = Utils.get_value(uid,'charm')[0]
+            money += (il + ch) * Utils.dice(500,il + ch) / 8
             if money < 0:
                 money = 0
             now = int(time())
@@ -910,46 +932,51 @@ class yinpa_Handles():
             DHandles.data_set(uid,'last_live_time',now)
             DHandles.data_set(uid,'live_broken',False)
         elif work_key == 4:
-            # 写文：基础属性 + 1d500，意志检定通过 ×1.3
-            money += (data[uid]['technique'] + data[uid]['intelligence']) * Utils.dice(500,data[uid]['technique'] + data[uid]['intelligence']) / 9
+            # 写文：当前属性 + 1d500，意志检定通过 ×1.3
+            te = Utils.get_value(uid,'technique')[0]
+            il = Utils.get_value(uid,'intelligence')[0]
+            vo = Utils.get_value(uid,'volition')[0]
+            money += (te + il) * Utils.dice(500,te + il) / 9
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,data[uid]['volition'])
+            d = Utils.dice(100,vo)
             msg += f"意志检定：1d100 = {d} "
-            if d < data[uid]['volition']:
+            if d < vo:
                 money *= 1.3
                 money = round(money, 2)
-                msg += f" < {data[uid]['volition']}\n文思泉涌！本次写文收益 ×1.3，最终收益：{money}\n"
+                msg += f" < {vo}\n文思泉涌！本次写文收益 ×1.3，最终收益：{money}\n"
             else:
-                msg += f" >= {data[uid]['volition']}\n"
+                msg += f" >= {vo}\n"
         elif work_key == 5:
-            # 打架：基础属性 + 1d500，恒触发体质检定昏迷
-            money += (data[uid]['strength'] + data[uid]['constitution']) * Utils.dice(500,data[uid]['strength'] + data[uid]['constitution']) / 6
+            # 打架：当前属性 + 1d500，恒触发体质检定昏迷
+            st = Utils.get_value(uid,'strength')[0]
+            co = Utils.get_value(uid,'constitution')[0]
+            money += (st + co) * Utils.dice(500,st + co) / 6
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            d = Utils.dice(100,data[uid]['constitution'])
+            d = Utils.dice(100,co)
             msg += f"体质检定：1d100 = {d} "
-            if d >= data[uid]['constitution']:
+            if d >= co:
                 DHandles.data_set(uid,"hp_v",0)
                 d = Utils.dice(3,(int)(uid) ^ 103)
                 DHandles.state_refresh(uid,2,time() + d * 3600)
                 DHandles.achievement_set(uid,"A04")
-                msg += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d3 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+                msg += f" >= {co}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d3 = {d}小时。（期间无法行动，无法被透，技能失效。）"
             else:
-                msg += f" < {data[uid]['constitution']}\n"
+                msg += f" < {co}\n"
         elif work_key == 6:
-            # 探险：彩票（成功概率50%，事件触发率30%）
+            # 探险：彩票（成功概率50%，事件触发率10%）
             d = Utils.dice(100,(int)(uid) ^ 102)
             money += (d - 50) * 300
             if money < 0:
                 money = 0
             money = round(money, 2)
             msg += f"你进行了工作：{dicts.work_dict[work_key]}\n收益：{money}\n"
-            if Utils.dice(10,(int)(uid) ^ 103) <= 3:
+            if Utils.dice(10,(int)(uid) ^ 103) <= 1:
                 d = Utils.dice(10,(int)(uid) ^ 104)
                 if d >= 1 and d <= 3:
                     keys = ['strength','constitution','technique','volition','intelligence','charm']
@@ -957,7 +984,7 @@ class yinpa_Handles():
                     d = Utils.dice(100,(int)(uid) ^ 106) / 20
                     new_value = data[uid][i] + d
                     if i in ['constitution','volition']:
-                        new_value = min(new_value, 90)
+                        new_value = min(new_value, 80)
                     msg += f"触发事件：你的{dicts.attribute_dict[i]}： {data[uid][i]} → {new_value}\n"
                     DHandles.data_set(uid,i,new_value)
                 elif d >= 4 and d <= 6:
@@ -999,10 +1026,9 @@ class yinpa_Handles():
         arg_list: list = command.split()
         if not arg_list:
             await matcher.finish("错误：参数错误！\n命令：/transfer <金额> <@某人 或 银趴昵称>")
-        if not arg_list[0].isdigit():
-            await matcher.finish("错误：金额必须为正整数！")
-        amount = int(arg_list[0])
-        if amount <= 0:
+        # isdigit() 对上标（²）等误判为数字但 int() 会抛错，统一走 safe_int
+        amount = Utils.safe_int(arg_list[0])
+        if amount is None or amount <= 0:
             await matcher.finish("错误：金额必须为正整数！")
         if not at:
             f_uid = None

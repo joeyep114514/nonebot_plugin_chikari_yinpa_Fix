@@ -38,6 +38,24 @@ plugin_config_file: Path = store.get_plugin_config_file("config.json")
 plugin_data_file.parent.mkdir(parents=True, exist_ok=True)
 plugin_config_file.parent.mkdir(parents=True, exist_ok=True)
 
+def _load_json_with_recovery(path: Path, default_factory):
+    """加载数据文件；若文件损坏（写入中途崩溃等），备份后重置，避免插件整体加载失败
+
+    Args:
+        path (Path): 数据文件路径
+        default_factory: 生成默认数据的工厂
+
+    Returns:
+        dict: 加载（或重置）后的数据
+    """
+    try:
+        return json.loads(path.read_text(encoding='utf-8'), strict=False)
+    except ValueError:
+        backup = path.parent / (path.name + f".corrupt.{int(time())}")
+        path.replace(backup)
+        print(f"[Chikari_Yinpa] 数据文件损坏，已备份至 {backup} 并重置为默认数据")
+        return default_factory()
+
 #用户数据文件初始化及载入
 
 if not plugin_data_file.exists() or plugin_data_file.stat().st_size == 0:
@@ -45,10 +63,27 @@ if not plugin_data_file.exists() or plugin_data_file.stat().st_size == 0:
     plugin_data_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
     data = init_data
 else:
-    data = json.loads(plugin_data_file.read_text(encoding='utf-8'), strict=False)
+    data = _load_json_with_recovery(plugin_data_file, dict)
 
 if "_work_cooldown" not in data or not isinstance(data["_work_cooldown"], dict):
     data["_work_cooldown"] = {}
+
+# 数据迁移：旧版本用户数据缺少 skill 字段，统一补齐为空列表，
+# 避免升级后 refresh_data / get_skill / skill_refresh 等直接索引崩溃
+# 注意：跳过 _ 前缀的内部字段（_work_cooldown 也是 dict，但不是用户记录）
+_skill_migrated = False
+for _uid, _ud in data.items():
+    if _uid.startswith("_"):
+        continue
+    if isinstance(_ud, dict) and "skill" not in _ud:
+        _ud["skill"] = []
+        _skill_migrated = True
+if _skill_migrated:
+    _tmp = plugin_data_file.parent / (plugin_data_file.name + ".tmp")
+    with open(_tmp, 'w', encoding='utf-8') as _f:
+        json.dump(data, _f, indent=4, ensure_ascii=False)
+    os.replace(_tmp, plugin_data_file)
+    print(f"[Chikari_Yinpa] 已为存量用户数据补齐 skill 字段并写回文件")
 
 #配置数据文件初始化及载入
 
@@ -59,24 +94,45 @@ if not plugin_config_file.exists() or plugin_config_file.stat().st_size == 0:
     plugin_config_file.write_text(json.dumps(init_data, indent=4, ensure_ascii=False), encoding='utf-8')
     configdata = init_data
 else:
-    configdata = json.loads(plugin_config_file.read_text(encoding='utf-8'), strict=False)
+    configdata = _load_json_with_recovery(plugin_config_file, lambda: {"yinpa_enabled_group":[]})
+    if not isinstance(configdata.get("yinpa_enabled_group"), list):
+        configdata["yinpa_enabled_group"] = []
+
+
+def _ship_hp_bonus(uid: str):
+    """舰装血量上限加成 100×√(等级)（舰装未破损时生效）
+
+    Args:
+        uid (str): 用户id
+
+    Returns:
+        int: 舰装血量上限加成
+    """
+    
+    from math import sqrt
+    for i in data.get(uid, {}).get("skill", []):
+        if i[0] == 6:
+            cooldown = i[1]
+            if cooldown is None or cooldown <= time():
+                return int(100 * sqrt(i[2]))
+            break
+    return 0
 
 
 class DHandles():
     """数据处理"""
     
     def file_save():
-        """将内存中的数据保存至文件
+        """将内存中的数据保存至文件（临时文件 + 原子替换，避免写入中途崩溃损坏数据文件）
         """
         
         global data
         global configdata
-        f = open(plugin_data_file,'w')
-        json.dump(data,f,indent=4)
-        f.close()
-        f = open(plugin_config_file,'w')
-        json.dump(configdata,f,indent=4)
-        f.close()
+        for path, payload in ((plugin_data_file, data), (plugin_config_file, configdata)):
+            tmp = path.parent / (path.name + ".tmp")
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, indent=4, ensure_ascii=False)
+            os.replace(tmp, path)
 
     def data_set(uid: str,key: str,value):
         """设置特定用户的特定数值
@@ -127,8 +183,8 @@ class DHandles():
         
         global data
         data[uid] = dict
-        data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
-        data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
+        data[uid]["hp_v"] = int((data[uid]["volition"] + 10) * 5) + _ship_hp_bonus(uid)
+        data[uid]["hp_c"] = int((data[uid]["constitution"] + 10) * 10) + _ship_hp_bonus(uid)
         DHandles.file_save()
         return
 
@@ -148,7 +204,9 @@ class DHandles():
         final = {}
         for i in range(6):
             inc = int(pts[i] * rate[i])  # 体质/意志 2:1（配合偶数校验后无小数）
-            final[keys[i]] = min(spec["base"][i] + inc, spec["cap"][i])
+            total = spec["base"][i] + inc
+            # cap 为 None 表示该属性无上限（力量/技巧/智力/魅力），仅体质/意志封顶 80
+            final[keys[i]] = total if spec["cap"][i] is None else min(total, spec["cap"][i])
         plugin_config = _get_plugin_config()
         global data
         data[uid] = {
@@ -164,6 +222,7 @@ class DHandles():
             'intelligence':final["intelligence"],
             'charm':final["charm"],
             'state':[],
+            'skill':[],
             "passive_times":0,
             "active_times":0,
             "last_sign_in_time":0,
@@ -182,8 +241,8 @@ class DHandles():
             "pandora_count":0,
             "explore_count":0,
         }
-        data[uid]["hp_v"] = (data[uid]["volition"] + 10) * 5
-        data[uid]["hp_c"] = (data[uid]["constitution"] + 10) * 10
+        data[uid]["hp_v"] = int((data[uid]["volition"] + 10) * 5) + _ship_hp_bonus(uid)
+        data[uid]["hp_c"] = int((data[uid]["constitution"] + 10) * 10) + _ship_hp_bonus(uid)
         DHandles.file_save()
         return
         
@@ -245,7 +304,8 @@ class DHandles():
         
         global data
         b = False
-        skills = data[uid]["skill"]
+        # setdefault 保证原地修改（append/remove）作用于 data 中的真实列表
+        skills = data[uid].setdefault("skill", [])
         if id == 9:
             level = 1
             mode = ''

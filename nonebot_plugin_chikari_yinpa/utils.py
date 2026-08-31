@@ -100,10 +100,31 @@ class Utils:
         Args:
             uid (str): 用户id
         """
-        
+
         DHandles.data_set(uid,"last_operation_time",(int)(time()/60))
         return
-    
+
+    @staticmethod
+    def safe_int(s, default=None):
+        """安全整数转换
+
+        str.isdigit() 对上标（²）、带圈数字（①）等 Unicode 字符返回 True，
+        但 int() 会抛 ValueError 导致命令无响应，因此所有用户输入的数字参数
+        统一通过本方法解析，失败时返回 default 而非抛异常。
+
+        Args:
+            s (str): 待转换的字符串
+            default: 转换失败时的返回值（默认 None）
+
+        Returns:
+            int | default: 转换结果
+        """
+
+        try:
+            return int(s)
+        except (ValueError, TypeError):
+            return default
+
     _dice_counter = 0
     def dice(d:int,_seed):
         """骰子
@@ -226,22 +247,50 @@ class Utils:
         # 防御：限制单行长度与总行数，防止超长文本（如超长昵称）触发超大图像分配导致内存/CPU 耗尽
         max_line_len = 100
         max_lines = 100
+        # 自动换行宽度上限：超过该宽度（像素）的单行会折行，避免渲染出超宽长条图
+        max_width = 800
         liens = text.split('\n')
         liens = [line[:max_line_len] for line in liens][:max_lines]
-        text = "\n".join(liens)
         font, emoji_font, emoji_scale = Utils._load_fonts(fontSize)
+
+        def _char_width(character: str) -> float:
+            return (emoji_font.getlength(character) * emoji_scale if Utils._is_emoji(character)
+                    else font.getlength(character))
+
+        # 按像素宽度自动换行
+        wrapped_lines = []
+        for line in liens:
+            if not line:
+                wrapped_lines.append("")
+                continue
+            cur = ""
+            cur_width = 0.0
+            for character in line:
+                w = _char_width(character)
+                if cur and cur_width + w > max_width:
+                    wrapped_lines.append(cur)
+                    cur = character
+                    cur_width = w
+                else:
+                    cur += character
+                    cur_width += w
+            wrapped_lines.append(cur)
+        liens = wrapped_lines[:max_lines]
+
         line_widths = []
         for line in liens:
             line_width = 0
             for character in line:
-                line_width += (emoji_font.getlength(character) * emoji_scale if Utils._is_emoji(character)
-                               else font.getlength(character))
+                line_width += _char_width(character)
             line_widths.append(line_width)
-        image = Image.new("RGB", (max(1, int(max(line_widths, default=0))), len(liens) * (fontSize + 5)), (255, 255, 255))
+        # 四周留白，避免文字贴边（与钓鱼插件渲染保持一致的观感）
+        padding_x = 12
+        padding_y = 8
+        image = Image.new("RGB", (max(1, int(max(line_widths, default=0))) + padding_x * 2, len(liens) * (fontSize + 5) + padding_y * 2), (255, 255, 255))
         draw = ImageDraw.Draw(image)
         for line_number, line in enumerate(liens):
-            x = 0
-            y = line_number * (fontSize + 5)
+            x = padding_x
+            y = padding_y + line_number * (fontSize + 5)
             for character in line:
                 if Utils._is_emoji(character):
                     x += Utils._draw_emoji(image, int(x), y, character, emoji_font, emoji_scale)
@@ -268,7 +317,7 @@ class Utils:
         user_data = data[uid]
         skill_text = ""
         state_text = ""
-        for i in user_data["skill"]:
+        for i in user_data.get("skill", []):
             if i[0] == 6 and i[1] and i[1] >= time():
                 skill_text += "\n    ——" + dicts.skill_dict[i[0]] + f'（等级：{i[2]}）（舰装损坏，{(int)(i[1] - time())}秒后修复）' + '；'
             else:
@@ -292,12 +341,12 @@ class Utils:
         f"    体质HP：{user_data['hp_c']}\n"\
         f"    长度：{round(user_data['penis_length'], 2)}\n"\
         f"    深度：{round(user_data['vagina_depth'], 2)}\n"\
-        f"    力量：{user_data['strength']}（当前：{Utils.get_value(uid,'strength')[0]}）\n"\
-        f"    体质：{user_data['constitution']}（当前：{Utils.get_value(uid,'constitution')[0]}）\n"\
-        f"    技巧：{user_data['technique']}（当前：{Utils.get_value(uid,'technique')[0]}）\n"\
-        f"    意志：{user_data['volition']}（当前：{Utils.get_value(uid,'volition')[0]}）\n"\
-        f"    智力：{user_data['intelligence']}\n"\
-        f"    魅力：{user_data['charm']}\n"\
+        f"    力量：{Utils.get_value(uid,'strength')[0]}\n"\
+        f"    体质：{Utils.get_value(uid,'constitution')[0]}\n"\
+        f"    技巧：{Utils.get_value(uid,'technique')[0]}\n"\
+        f"    意志：{Utils.get_value(uid,'volition')[0]}\n"\
+        f"    智力：{Utils.get_value(uid,'intelligence')[0]}\n"\
+        f"    魅力：{Utils.get_value(uid,'charm')[0]}\n"\
         f"    YPD：{await Utils.get_money(uid)}\n"\
         f"    技能：{skill_text}\n"\
         f"    状态：{state_text}\n"\
@@ -368,7 +417,7 @@ class Utils:
         """
         
         b = False
-        for i in data[uid]["skill"]:
+        for i in data[uid].get("skill", []):
             if len(i) <= 2:
                 DHandles.skill_refresh(uid,i[0],i[1])
         for i in data[uid]["state"]:
@@ -382,20 +431,20 @@ class Utils:
                 if i[1] > time():
                     b = True
                 else:
-                    DHandles.data_set(uid,'hp_v',(Utils.get_value(uid,'volition')[0] + 10) * 5)
+                    DHandles.data_set(uid,'hp_v',Utils.get_hp_v_max(uid))
             elif i[0] == 2 and i[1] <= time():
-                DHandles.data_set(uid,'hp_v',(Utils.get_value(uid,'volition')[0] + 10) * 5)
-                DHandles.data_set(uid,'hp_c',(Utils.get_value(uid,'constitution')[0] + 10) * 10)
+                DHandles.data_set(uid,'hp_v',Utils.get_hp_v_max(uid))
+                DHandles.data_set(uid,'hp_c',Utils.get_hp_c_max(uid))
         DHandles.data_set(uid,"state",new_state)
         if b :
-            if data[uid]['hp_c'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= (Utils.get_value(uid,'constitution')[0] + 10) * 10:
-                DHandles.data_set(uid,'hp_c',(Utils.get_value(uid,'constitution')[0] + 10) * 10)
+            if data[uid]['hp_c'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= Utils.get_hp_c_max(uid):
+                DHandles.data_set(uid,'hp_c',Utils.get_hp_c_max(uid))
             else:
                 DHandles.data_set(uid,'hp_c',data[uid]['hp_c'] + ((int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60)) * Utils.get_regeneration_rate(uid))
         else:
-            DHandles.data_set(uid,'hp_c',(Utils.get_value(uid,'constitution')[0] + 10) * 10)
-            if data[uid]['hp_v'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= (Utils.get_value(uid,'volition')[0] + 10) * 5:
-                DHandles.data_set(uid,'hp_v',(Utils.get_value(uid,'volition')[0] + 10) * 5)
+            DHandles.data_set(uid,'hp_c',Utils.get_hp_c_max(uid))
+            if data[uid]['hp_v'] + (int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60) >= Utils.get_hp_v_max(uid):
+                DHandles.data_set(uid,'hp_v',Utils.get_hp_v_max(uid))
             else:
                 DHandles.data_set(uid,'hp_v',data[uid]['hp_v'] + ((int)(((int)(time()) - (int)(data[uid]["last_refresh_time"])) / 60)) * Utils.get_regeneration_rate(uid))
         DHandles.data_set(uid,"last_refresh_time",time())
@@ -413,7 +462,7 @@ class Utils:
         """
         
         s = []
-        for i in data[uid]["skill"]:
+        for i in data[uid].get("skill", []):
             if i[0] == id:
                 s = i
             if len(i) <= 2:
@@ -485,10 +534,50 @@ class Utils:
         
         if  i := Utils.get_skill(uid,7):
             if Utils.is_night():
-                return 20 * sqrt(i[2])
+                return 10 * sqrt(i[2])
             else:
-                return -20 / sqrt(i[2])
+                return -15 / sqrt(i[2])
         return 0
+
+    def get_hp_bonus(uid: str):
+        """舰装血量上限加成
+
+        舰装未破损时，意志HP与体质HP上限各增加 100×√(等级)。
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            int: 血量上限加成
+        """
+        
+        if i := Utils.boat(uid):
+            return int(100 * sqrt(i[2]))
+        return 0
+
+    def get_hp_v_max(uid: str):
+        """获取意志HP上限
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            int: 意志HP上限
+        """
+        
+        return int((Utils.get_value(uid,'volition')[0] + 10) * 5) + Utils.get_hp_bonus(uid)
+
+    def get_hp_c_max(uid: str):
+        """获取体质HP上限
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            int: 体质HP上限
+        """
+        
+        return int((Utils.get_value(uid,'constitution')[0] + 10) * 10) + Utils.get_hp_bonus(uid)
 
     def get_value(uid: str,key: str):
         """获取用户当前状态下的某一数值
@@ -517,13 +606,9 @@ class Utils:
             value = data[uid]['vagina_depth']
         elif key == 'strength':
             value = data[uid]['strength']
-            if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
             value += Utils.vampire(uid)
         elif key == 'constitution':
             value = data[uid]['constitution']
-            if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
             value += Utils.vampire(uid)
         elif key == 'technique':
             value = data[uid]['technique']
@@ -532,8 +617,6 @@ class Utils:
                 value += -20 * i[2]
         elif key == 'volition':
             value = data[uid]['volition']
-            if i := Utils.boat(uid):
-                value += Utils.get_value(uid,'intelligence')[0] * sqrt(i[2])
             value += Utils.vampire(uid)
             if (i := Utils.get_skill(uid,12)) and Utils.is_night():
                 value += -20 * i[2]
@@ -541,6 +624,8 @@ class Utils:
             value = data[uid]['intelligence']
         elif key == 'charm':
             value = data[uid]['charm']
+        if key in ['constitution','volition']:
+            value = min(value, 80)
         if value < 0:
             value = 0
         return [round(value, 2),b]
@@ -566,11 +651,11 @@ class Utils:
             data[uid]["state"] = [s for s in data[uid]["state"] if s[0] != 4]
             DHandles.file_save()
         if i := Utils.get_skill(uid,2):
-            atk.append([30 * sqrt(i[2]),f"{data[uid]['name']}：猫化",False])
+            atk.append([20 * sqrt(i[2]),f"{data[uid]['name']}：猫化",False])
         if i := Utils.get_skill(uid,3):
-            atk.append([Utils.get_value(uid,'intelligence')[0] / 2 * sqrt(i[2]),f"{data[uid]['name']}：自然之心",False])
+            atk.append([Utils.get_value(uid,'intelligence')[0] / 3 * sqrt(i[2]),f"{data[uid]['name']}：自然之心",False])
         if i := Utils.get_skill(uid,5):
-            atk.append([80 * sqrt(i[2]),f"{data[uid]['name']}：淫纹",False])
+            atk.append([50 * sqrt(i[2]),f"{data[uid]['name']}：淫纹",False])
         if i := Utils.get_state(uid,3):
             atk.append([30 * sqrt(i[2]),f"{data[uid]['name']}：伟哥",False])
         if i := Utils.get_skill(uid,11):
@@ -580,15 +665,16 @@ class Utils:
         if i := Utils.get_skill(target,14):
             atk.append([50 * i[2],f"{data[target]['name']}：敏感",False])
         if i := Utils.get_skill(target,15):
-            if Utils.dice(100,i[2] * 15) <= i[2]:
-                atk.append([1000,f"{data[target]['name']}：弱点",True])
+            # 弱点（诅咒）：受击时1d100，小于30√L则额外受到1d500伤害（等级影响触发概率，伤害掷骰）
+            if Utils.dice(100,i[2] * 15) < 30 * sqrt(i[2]):
+                atk.append([Utils.dice(500,i[2]),f"{data[target]['name']}：弱点",False])
         
         if i := Utils.get_skill(target,2):
-            atk.append([-30 * sqrt(i[2]),f"{data[target]['name']}：猫化",False])
+            atk.append([-20 * sqrt(i[2]),f"{data[target]['name']}：猫化",False])
         if i := Utils.get_skill(target,3):
-            atk.append([-Utils.get_value(target,'intelligence')[0] / 2 * sqrt(i[2]),f"{data[target]['name']}：自然之心",False])
+            atk.append([-Utils.get_value(target,'intelligence')[0] / 3 * sqrt(i[2]),f"{data[target]['name']}：自然之心",False])
         if i := Utils.get_skill(target,4):
-            atk.append([-80 * sqrt(i[2]),f"{data[target]['name']}：圣体",False])
+            atk.append([-50 * sqrt(i[2]),f"{data[target]['name']}：圣体",False])
         if i := Utils.get_skill(uid,10):
             atk.append([-50 * i[2],f"{data[uid]['name']}：呓语",False])
         return atk
@@ -609,36 +695,38 @@ class Utils:
             DHandles.data_set(uid,'hp_v',(int)(Utils.get_value(uid,"hp")[0] - hp))
             if data[uid]['hp_v'] <= 0:
                 d = Utils.dice(100,(int)(uid) ^ 10)
+                vol = Utils.get_value(uid,'volition')[0]
                 str += f"\n{data[uid]['name']}高潮了！\n意志检定：1d100 = {d}"
-                if d >= data[uid]['volition']:
+                if d >= vol:
                     DHandles.data_set(uid,'hp_v',0)
                     d = min(Utils.dice(30,(int)(uid) ^ 11), 30)
                     DHandles.state_refresh(uid,1,time() + d * 60)
                     DHandles.achievement_set(uid,"A03")
-                    str += f" >= {data[uid]['volition']}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，技能失效。如果失神期间受到攻击，失神状态将延长一分钟。）"
+                    str += f" >= {vol}\n{data[uid]['name']}失神了！失神状态将持续1d30 = {d}分钟。（期间无法行动，普通技能失效，诅咒仍生效。如果失神期间受到攻击，失神状态将延长一分钟。）"
                 else:
-                    d = Utils.dice(data[uid]['volition'],(int)(uid) ^ 12)
+                    d = Utils.dice(vol,(int)(uid) ^ 12)
                     DHandles.data_set(uid,'hp_v',(d + 10) * 5)
-                    str += f" < {data[uid]['volition']}\n{data[uid]['name']}的意志HP回复至{data[uid]['hp_v']}"
+                    str += f" < {vol}\n{data[uid]['name']}的意志HP回复至{data[uid]['hp_v']}"
         else:
             DHandles.data_set(uid,'hp_c',(int)(Utils.get_value(uid,"hp")[0] - hp))
             DHandles.state_refresh(uid,1,Utils.get_state(uid,1)[1] + 60)
             if data[uid]['hp_c'] <= 0:
                 d = Utils.dice(100,(int)(uid) ^ 13)
+                con = Utils.get_value(uid,'constitution')[0]
                 str += f"\n{data[uid]['name']}高潮了！\n体质检定：1d100 = {d}"
-                if d >= data[uid]['constitution']:
+                if d >= con:
                     DHandles.data_set(uid,'hp_c',0)
                     d = min(Utils.dice(5,(int)(uid) ^ 14), 5)
                     DHandles.state_refresh(uid,2,time() + d * 3600)
                     DHandles.achievement_set(uid,"A04")
-                    str += f" >= {data[uid]['constitution']}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
-                    if Utils.boat(uid):
-                        DHandles.skill_refresh(uid,6,time() + 259200)
+                    str += f" >= {con}\n{data[uid]['name']}昏迷了！昏迷状态将持续1d5 = {d}小时。（期间无法行动，无法被透，技能失效。）"
+                    if bt := Utils.boat(uid):
+                        DHandles.skill_refresh(uid,6,time() + 259200,level = bt[2])
                         str += f"\n{data[uid]['name']}的舰装破损了！将进入三天的冷却。"
                 else:
-                    d = Utils.dice(data[uid]['constitution'],(int)(uid) ^ 15)
+                    d = Utils.dice(con,(int)(uid) ^ 15)
                     DHandles.data_set(uid,'hp_c',(d + 10) * 5)
-                    str += f" < {data[uid]['constitution']}\n{data[uid]['name']}的体质HP回复至{data[uid]['hp_c']}"
+                    str += f" < {con}\n{data[uid]['name']}的体质HP回复至{data[uid]['hp_c']}"
         if str:
             str = "\n" + str
         return str
@@ -755,11 +843,15 @@ class Utils:
         elif id == 3:
             hp = Utils.get_value(uid,"hp")
             if hp[1]:
-                DHandles.data_set(uid,"hp_c",data[uid]["hp_c"] + 100)
-                str += "体质HP增加了100\n"
+                old_hp = data[uid]["hp_c"]
+                new_hp = min(old_hp + 100, Utils.get_hp_c_max(uid))
+                DHandles.data_set(uid,"hp_c",new_hp)
+                str += f"体质HP：{old_hp} → {new_hp}\n"
             else:
-                DHandles.data_set(uid,"hp_v",data[uid]["hp_v"] + 100)
-                str += "意志HP增加了100\n"
+                old_hp = data[uid]["hp_v"]
+                new_hp = min(old_hp + 100, Utils.get_hp_v_max(uid))
+                DHandles.data_set(uid,"hp_v",new_hp)
+                str += f"意志HP：{old_hp} → {new_hp}\n"
         elif id == 4:
             str += DHandles.skill_refresh(uid,2,level = 1,mode = 'add')
         elif id == 5:
@@ -769,7 +861,8 @@ class Utils:
         elif id == 7:
             str += DHandles.skill_refresh(uid,5,level = 1,mode = 'add')
         elif id == 8:
-            str += DHandles.skill_refresh(uid,6,level = 1,mode = 'add')
+            cur = next((s for s in data[uid].get("skill", []) if s[0] == 6), None)
+            str += DHandles.skill_refresh(uid,6,cur[1] if cur else None,level = 1,mode = 'add')
         elif id == 9:
             str += DHandles.skill_refresh(uid,7,level = 1,mode = 'add')
         elif id == 10:
@@ -781,8 +874,8 @@ class Utils:
             str += DHandles.skill_refresh(uid,9,level = 1,mode = 'add')
             DHandles.achievement_set(uid,"D04")
         elif id == 12:
-            data[uid]["skill"] = [i for i in data[uid]["skill"] if i[0] not in [10,11,12,13,14,15,]]
-            str += "已清除所有诅咒"
+            DHandles.data_set(uid,"skill",[i for i in data[uid].get("skill", []) if i[0] not in [10,11,12,13,14,15]])
+            str += "已清除所有诅咒\n"
         elif id == 13:
             d = Utils.dice(10,13)
             pool = [i for i in range(2,16)]
@@ -790,12 +883,13 @@ class Utils:
                 pool.remove(9)
             sk = choice(pool)
             str += f"1d10 = {d}\n"
-            str += DHandles.skill_refresh(uid,sk,level = 5 + d,mode = 'add')
+            cur = next((s for s in data[uid].get("skill", []) if s[0] == sk), None)
+            str += DHandles.skill_refresh(uid,sk,cur[1] if cur else None,level = 5 + d,mode = 'add')
             DHandles.data_set(uid,'pandora_count',data[uid].get('pandora_count',0) + 1)
         elif id == 14:
             DHandles.data_set(uid,'d10_count',data[uid].get('d10_count',0) + 1)
             d = Utils.dice(10,13)
-            str += f"1d10 = {d}"
+            str += f"1d10 = {d}\n"
             if d == 1:
                 d = Utils.dice(10,131)
                 actual = Utils.d10_apply(uid,'penis_length',d * 0.1)
@@ -823,7 +917,7 @@ class Utils:
             elif d == 4:
                 d = Utils.dice(10,134)
                 actual = Utils.d10_apply(uid,'constitution',d)
-                new_value = min(data[uid]['constitution'] + actual, 90)
+                new_value = min(data[uid]['constitution'] + actual, 80)
                 str += f"1d10 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
                 if actual < d:
                     str += "（已达D10预算上限）"
@@ -839,7 +933,7 @@ class Utils:
             elif d == 6:
                 d = Utils.dice(10,136)
                 actual = Utils.d10_apply(uid,'volition',d)
-                new_value = min(data[uid]['volition'] + actual, 90)
+                new_value = min(data[uid]['volition'] + actual, 80)
                 str += f"1d10 = {d}\n意志：{data[uid]['volition']} → {new_value}"
                 if actual < d:
                     str += "（已达D10预算上限）"
@@ -870,7 +964,6 @@ class Utils:
                     str += "（已达D10金钱预算上限）"
             elif d == 10:
                 d = Utils.dice(2,1310)
-                str += f"1d10 = {d}\n"
                 si = 1
                 if d == 1:
                     si = 1
@@ -883,59 +976,68 @@ class Utils:
                 d = Utils.dice(9,1311)
                 str += f"1d9 = {d}\n"
                 if d == 1:
-                    d = Utils.dice(100,131)
-                    actual = Utils.d10_apply(uid,'penis_length',d * 0.1 * si)
+                    roll = Utils.dice(100,131)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'penis_length',pen * 0.1 * si)
                     new_value = round(data[uid]['penis_length'] + actual, 2)
-                    str += f"1d100 = {d}\n长度：{data[uid]['penis_length']} → {new_value}"
+                    str += f"1d100 = {pen}\n长度：{data[uid]['penis_length']} → {new_value}"
                     DHandles.data_set(uid,'penis_length',new_value)
                 elif d == 2:
-                    d = Utils.dice(100,132)
-                    actual = Utils.d10_apply(uid,'vagina_depth',d * 0.1 * si)
+                    roll = Utils.dice(100,132)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'vagina_depth',pen * 0.1 * si)
                     new_value = round(data[uid]['vagina_depth'] + actual, 2)
-                    str += f"1d100 = {d}\n深度：{data[uid]['vagina_depth']} → {new_value}"
+                    str += f"1d100 = {pen}\n深度：{data[uid]['vagina_depth']} → {new_value}"
                     DHandles.data_set(uid,'vagina_depth',new_value)
                 elif d == 3:
-                    d = Utils.dice(100,133)
-                    actual = Utils.d10_apply(uid,'strength',d * si)
+                    roll = Utils.dice(100,133)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'strength',pen * si)
                     new_value = data[uid]['strength'] + actual
-                    str += f"1d100 = {d}\n力量：{data[uid]['strength']} → {new_value}"
+                    str += f"1d100 = {pen}\n力量：{data[uid]['strength']} → {new_value}"
                     DHandles.data_set(uid,'strength',new_value)
                 elif d == 4:
-                    d = Utils.dice(100,134)
-                    actual = Utils.d10_apply(uid,'constitution',d * si)
-                    new_value = min(data[uid]['constitution'] + actual, 90)
-                    str += f"1d100 = {d}\n体质：{data[uid]['constitution']} → {new_value}"
+                    roll = Utils.dice(100,134)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'constitution',pen * si)
+                    new_value = min(data[uid]['constitution'] + actual, 80)
+                    str += f"1d100 = {pen}\n体质：{data[uid]['constitution']} → {new_value}"
                     DHandles.data_set(uid,'constitution',new_value)
                 elif d == 5:
-                    d = Utils.dice(100,135)
-                    actual = Utils.d10_apply(uid,'technique',d * si)
+                    roll = Utils.dice(100,135)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'technique',pen * si)
                     new_value = data[uid]['technique'] + actual
-                    str += f"1d100 = {d}\n技巧：{data[uid]['technique']} → {new_value}"
+                    str += f"1d100 = {pen}\n技巧：{data[uid]['technique']} → {new_value}"
                     DHandles.data_set(uid,'technique',new_value)
                 elif d == 6:
-                    d = Utils.dice(100,136)
-                    actual = Utils.d10_apply(uid,'volition',d * si)
-                    new_value = min(data[uid]['volition'] + actual, 90)
-                    str += f"1d100 = {d}\n意志：{data[uid]['volition']} → {new_value}"
+                    roll = Utils.dice(100,136)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'volition',pen * si)
+                    new_value = min(data[uid]['volition'] + actual, 80)
+                    str += f"1d100 = {pen}\n意志：{data[uid]['volition']} → {new_value}"
                     DHandles.data_set(uid,'volition',new_value)
                 elif d == 7:
-                    d = Utils.dice(100,137)
-                    actual = Utils.d10_apply(uid,'intelligence',d * si)
+                    roll = Utils.dice(100,137)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'intelligence',pen * si)
                     new_value = data[uid]['intelligence'] + actual
-                    str += f"1d100 = {d}\n智力：{data[uid]['intelligence']} → {new_value}"
+                    str += f"1d100 = {pen}\n智力：{data[uid]['intelligence']} → {new_value}"
                     DHandles.data_set(uid,'intelligence',new_value)
                 elif d == 8:
-                    d = Utils.dice(100,138)
-                    actual = Utils.d10_apply(uid,'charm',d * si)
+                    roll = Utils.dice(100,138)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'charm',pen * si)
                     new_value = data[uid]['charm'] + actual
-                    str += f"1d100 = {d}\n魅力：{data[uid]['charm']} → {new_value}"
+                    str += f"1d100 = {pen}\n魅力：{data[uid]['charm']} → {new_value}"
                     DHandles.data_set(uid,'charm',new_value)
                 elif d == 9:
-                    d = Utils.dice(100,139)
-                    actual = Utils.d10_apply(uid,'money',d * 1000 * si)
+                    roll = Utils.dice(100,139)
+                    pen = roll if si == 1 else round(roll / 2)
+                    actual = Utils.d10_apply(uid,'money',pen * 1000 * si)
                     current_money = await Utils.get_money(uid)
                     new_money = await Utils.add_money(uid, actual)
-                    str += f"1d100 = {d}\nYPD：{current_money} → {new_money}"
+                    str += f"1d100 = {pen}\nYPD：{current_money} → {new_money}"
         return str
     
     async def get_group_yinpa_list(bid: str,gid: int):

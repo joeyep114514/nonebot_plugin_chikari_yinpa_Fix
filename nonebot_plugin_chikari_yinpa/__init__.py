@@ -27,7 +27,7 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={"~onebot.v11"}
 )
 
-__version__ = "2.0.6"
+__version__ = "2.1.7"
 
 on_yinpa_control = on_command(
     "yinpa_control",
@@ -120,8 +120,8 @@ on_yinpa_attack_kou = on_command(
 )
 
 on_yinpa_shop = on_command(
-    "shop",
-    aliases={"商店","买","买东西","店"},
+    "ypshop",
+    aliases={"银趴商店","买","买东西","店"},
     priority=10,
     block=False,
     handlers=[yinpa_Handles.yinpa_shop]
