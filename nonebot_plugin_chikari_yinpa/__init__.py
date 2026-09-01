@@ -120,8 +120,8 @@ on_yinpa_attack_kou = on_command(
 )
 
 on_yinpa_shop = on_command(
-    "ypshop",
-    aliases={"银趴商店","买","买东西","店"},
+    "shop",
+    aliases={"ypshop","银趴商店","买","买东西","店"},
     priority=10,
     block=False,
     handlers=[yinpa_Handles.yinpa_shop]

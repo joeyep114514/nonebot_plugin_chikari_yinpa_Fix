@@ -769,7 +769,7 @@ class yinpa_Handles():
             lines.append(f"▶ {i}. {dicts.shop_dict[i]}：{dicts.shop_price_dict[i]} YPD")
         lines.append("")
         lines.append("详情：/yinpa_help shop <商品名或ID>")
-        lines.append("购买：/ypshop <商品名或ID>（多个用空格分隔）")
+        lines.append("购买：/shop <商品名或ID>（多个用空格分隔）")
         text = "\n".join(lines)
         if header:
             text = header + "\n" + text
