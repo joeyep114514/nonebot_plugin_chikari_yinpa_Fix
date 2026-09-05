@@ -7,7 +7,7 @@ from hashlib import md5
 from math import sqrt, exp
 import random
 
-from .data_handles import data,configdata,DHandles
+from .data_handles import data,configdata,DHandles,_get_plugin_config
 from .config import plugin_config
 from .utils import Utils
 
