@@ -253,11 +253,36 @@ class Utils:
         liens = [line[:max_line_len] for line in liens][:max_lines]
         font, emoji_font, emoji_scale = Utils._load_fonts(fontSize)
 
-        def _char_width(character: str) -> float:
-            return (emoji_font.getlength(character) * emoji_scale if Utils._is_emoji(character)
-                    else font.getlength(character))
+        def _char_step(character: str) -> float:
+            """单个字符渲染后实际占用的横向步进（与下方绘制时 x 的递增完全一致）"""
+            if Utils._is_emoji(character):
+                # 与 _draw_emoji 内部一致：按 emoji 字体的墨水包围盒计算缩放后的图层宽度
+                bbox = emoji_font.getbbox(character)
+                return max(1, round((bbox[2] - bbox[0]) * emoji_scale))
+            return font.getlength(character)
 
-        # 按像素宽度自动换行
+        def _line_width(line: str) -> float:
+            """行的真实渲染宽度。
+
+            以字符实际墨水的右边缘为准，而不是简单累加字面步进：部分字符的墨水
+            会比字面步进更宽（如字母 y/f/j 的超出部分、★●▲ 等符号、行尾 emoji
+            的贴边），若画布按步进求和计算，这些墨水会被画布右缘裁掉，表现为
+            “一行文字显示不全”。
+            """
+            x = 0.0
+            right = 0.0
+            for character in line:
+                step = _char_step(character)
+                if Utils._is_emoji(character):
+                    # emoji 以图层宽度直接铺满，右边缘 = x + 图层宽
+                    right = max(right, x + step)
+                else:
+                    # 常规字符右边缘 = 绘制原点 + 墨水包围盒右缘
+                    right = max(right, x + font.getbbox(character)[2])
+                x += step
+            return max(x, right)
+
+        # 按像素宽度自动换行（用渲染步进，避免折行后仍超出 max_width）
         wrapped_lines = []
         for line in liens:
             if not line:
@@ -266,7 +291,7 @@ class Utils:
             cur = ""
             cur_width = 0.0
             for character in line:
-                w = _char_width(character)
+                w = _char_step(character)
                 if cur and cur_width + w > max_width:
                     wrapped_lines.append(cur)
                     cur = character
@@ -277,12 +302,7 @@ class Utils:
             wrapped_lines.append(cur)
         liens = wrapped_lines[:max_lines]
 
-        line_widths = []
-        for line in liens:
-            line_width = 0
-            for character in line:
-                line_width += _char_width(character)
-            line_widths.append(line_width)
+        line_widths = [_line_width(line) for line in liens]
         # 四周留白，避免文字贴边（与钓鱼插件渲染保持一致的观感）
         padding_x = 12
         padding_y = 8
