@@ -244,13 +244,15 @@ class Utils:
         """
         
         fontSize = 20
-        # 防御：限制单行长度与总行数，防止超长文本（如超长昵称）触发超大图像分配导致内存/CPU 耗尽
-        max_line_len = 100
+        # 防御：限制单行长度与总行数，防止超长文本（如超长昵称）触发超大图像分配导致内存/CPU 耗尽。
+        # 单行上限只作最末尾的安全兜底（远大于正常内容），自动换行在下方按像素完成，
+        # 因此较长的逻辑行会先完整折行、再应用行数上限，不会在折行前被截断丢字。
+        max_line_len = 2000
         max_lines = 100
         # 自动换行宽度上限：超过该宽度（像素）的单行会折行，避免渲染出超宽长条图
         max_width = 800
         liens = text.split('\n')
-        liens = [line[:max_line_len] for line in liens][:max_lines]
+        liens = [line[:max_line_len] for line in liens]
         font, emoji_font, emoji_scale = Utils._load_fonts(fontSize)
 
         def _char_step(character: str) -> float:
