@@ -8,7 +8,7 @@ from nonebot.rule import Rule
 from nonebot.plugin import PluginMetadata
 
 from .config import Config
-from .handles import yinpa_Handles, _join_pending_rule
+from .handles import yinpa_Handles, _join_pending_rule, _reincarnate_pending_rule
 from nonebot_plugin_value.api.api_currency import get_or_create_currency
 from nonebot_plugin_value.pyd_models.currency_pyd import CurrencyData
 
@@ -27,7 +27,7 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={"~onebot.v11"}
 )
 
-__version__ = "2.1.7"
+__version__ = "2.1.8"
 
 on_yinpa_control = on_command(
     "yinpa_control",
@@ -77,6 +77,14 @@ on_yinpa_join_step = on_message(
     priority=1000,
     block=True,
     handlers=[yinpa_Handles.yinpa_join_step]
+)
+
+# 转生苹果二次确认：优先级高于普通指令，避免用户回复“确认”时被其他 matcher 抢走
+on_yinpa_reincarnate_confirm = on_message(
+    rule=Rule(_reincarnate_pending_rule),
+    priority=5,
+    block=True,
+    handlers=[yinpa_Handles.yinpa_reincarnate_confirm]
 )
 
 on_yinpa_leave = on_command(

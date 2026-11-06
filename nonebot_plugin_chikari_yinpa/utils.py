@@ -249,8 +249,19 @@ class Utils:
         # 因此较长的逻辑行会先完整折行、再应用行数上限，不会在折行前被截断丢字。
         max_line_len = 2000
         max_lines = 100
-        # 自动换行宽度上限：超过该宽度（像素）的单行会折行，避免渲染出超宽长条图
-        max_width = 800
+        # 四周留白，避免文字贴边（与钓鱼插件渲染保持一致的观感）
+        padding_x = 12
+        padding_y = 8
+        # 图片最大宽度（含左右留白）：可由配置调整，默认 600px。
+        # 800px 的图片在手机上会被聊天软件整体缩小，反而让字更小；收窄后更接近
+        # 手机屏幕的阅读宽度，状态/成就再多也不会被撑成超宽长条图。
+        try:
+            configured_max_width = int(getattr(plugin_config, "chikari_yinpa_image_max_width", 600) or 600)
+        except (TypeError, ValueError):
+            configured_max_width = 600
+        max_width = max(320, min(1600, configured_max_width))
+        # 文本实际可用于折行的宽度要扣掉左右留白
+        text_max_width = max(80, max_width - padding_x * 2)
         liens = text.split('\n')
         liens = [line[:max_line_len] for line in liens]
         font, emoji_font, emoji_scale = Utils._load_fonts(fontSize)
@@ -284,30 +295,86 @@ class Utils:
                 x += step
             return max(x, right)
 
-        # 按像素宽度自动换行（用渲染步进，避免折行后仍超出 max_width）
+        # 优先在这些标点之后换行，避免把完整的短句/条目从中间劈开
+        break_after = set("、，。；：！？…—")
+        # 行首禁则：右括号/句末标点不应出现在新行开头。预留两个全角字符的宽度，
+        # 让“。）”“，”等连续收尾标点能留在上一行。
+        closing_punct = set("、，。；：！？…—）】》」』”’")
+        kinsoku_reserve = fontSize * 2
+        wrap_limit = max(60, text_max_width - kinsoku_reserve)
+        # 续行在原有缩进基础上再缩进两格，便于区分“新条目”和“同一条目的换行”
+        continuation_extra = "  "
+
+        def _wrap_line(line: str) -> list:
+            """按像素宽度折行，并保留行首缩进（续行使用悬挂缩进）"""
+            if not line:
+                return [""]
+            indent_len = len(line) - len(line.lstrip(" "))
+            indent = line[:indent_len]
+            content = line[indent_len:]
+            if not content:
+                return [line]
+
+            wrapped = []
+            start = 0
+            prefix = indent
+            total = len(content)
+            while start < total:
+                prefix_width = _line_width(prefix)
+                avail = text_max_width - prefix_width
+                if avail < fontSize:
+                    # 缩进过深时退化为无缩进，保证至少有一个字符的绘制空间
+                    prefix = ""
+                    prefix_width = 0.0
+                    avail = text_max_width
+                normal_limit = max(60, wrap_limit - prefix_width)
+                x = 0.0
+                right = 0.0
+                end = start
+                last_break = -1
+                while end < total:
+                    character = content[end]
+                    step = _char_step(character)
+                    if Utils._is_emoji(character):
+                        next_right = max(right, x + step)
+                    else:
+                        next_right = max(right, x + font.getbbox(character)[2])
+                    next_x = x + step
+                    limit = avail if character in closing_punct else normal_limit
+                    if max(next_x, next_right) > limit and end > start:
+                        break
+                    x, right = next_x, next_right
+                    end += 1
+                    if character in break_after:
+                        last_break = end
+                if end >= total:
+                    wrapped.append(prefix + content[start:end])
+                    break
+                # 优先在标点后断开；但断点太靠前时不采用，避免一行只剩两三个字。
+                # 若断点后紧跟收尾标点（如“。）”），把断点后移到标点之后，
+                # 防止右括号被甩到下一行行首。
+                if last_break > start:
+                    while last_break < end and content[last_break] in closing_punct:
+                        last_break += 1
+                if last_break > start and _line_width(content[start:last_break]) >= avail * 0.4:
+                    end = last_break
+                if end == start:
+                    end = start + 1
+                wrapped.append((prefix + content[start:end]).rstrip())
+                start = end
+                # 跳过断点后多余的空格
+                while start < total and content[start] == " ":
+                    start += 1
+                prefix = indent + continuation_extra if start < total else indent
+            return wrapped
+
+        # 按像素宽度自动换行（用渲染步进，避免折行后仍超出 text_max_width）
         wrapped_lines = []
         for line in liens:
-            if not line:
-                wrapped_lines.append("")
-                continue
-            cur = ""
-            cur_width = 0.0
-            for character in line:
-                w = _char_step(character)
-                if cur and cur_width + w > max_width:
-                    wrapped_lines.append(cur)
-                    cur = character
-                    cur_width = w
-                else:
-                    cur += character
-                    cur_width += w
-            wrapped_lines.append(cur)
+            wrapped_lines.extend(_wrap_line(line))
         liens = wrapped_lines[:max_lines]
 
         line_widths = [_line_width(line) for line in liens]
-        # 四周留白，避免文字贴边（与钓鱼插件渲染保持一致的观感）
-        padding_x = 12
-        padding_y = 8
         image = Image.new("RGB", (max(1, int(max(line_widths, default=0))) + padding_x * 2, len(liens) * (fontSize + 5) + padding_y * 2), (255, 255, 255))
         draw = ImageDraw.Draw(image)
         for line_number, line in enumerate(liens):
@@ -337,25 +404,24 @@ class Utils:
         await Utils.refresh_data(uid)
         await Utils.achievement_scan(uid)
         user_data = data[uid]
-        skill_text = ""
-        state_text = ""
+        skill_lines = []
+        state_lines = []
         for i in user_data.get("skill", []):
+            skill_line = f"        {dicts.skill_dict[i[0]]}（等级：{i[2]}）"
             if i[0] == 6 and i[1] and i[1] >= time():
-                skill_text += "\n    ——" + dicts.skill_dict[i[0]] + f'（等级：{i[2]}）（舰装损坏，{(int)(i[1] - time())}秒后修复）' + '；'
-            else:
-                skill_text += "\n    ——" + dicts.skill_dict[i[0]] + f'（等级：{i[2]}）' + '；'
-        if not skill_text:
-            skill_text = '无'
+                skill_line += f"（舰装损坏，{(int)(i[1] - time())}秒后修复）"
+            skill_lines.append(skill_line)
+        # 技能/状态逐条换行展示：条目再多也只会增加图片高度，不会把图片撑宽
+        skill_text = "\n" + "\n".join(skill_lines) if skill_lines else '无'
         for i in user_data["state"]:
             if i[0] == 4:
-                state_text += dicts.state_dict[i[0]] + f'（等级：{i[2]}）（永久，触发后消耗）' + '；'
+                state_lines.append(f"        {dicts.state_dict[i[0]]}（等级：{i[2]}）（永久，触发后消耗）")
             else:
-                state_text += dicts.state_dict[i[0]] + f'（等级：{i[2]}）（剩余时间：{(int)(i[1] - time())}秒）' + '；'
-        if not state_text:
-            state_text = '无'
+                state_lines.append(f"        {dicts.state_dict[i[0]]}（等级：{i[2]}）（剩余时间：{(int)(i[1] - time())}秒）")
+        state_text = "\n" + "\n".join(state_lines) if state_lines else '无'
         ach_list = data[uid].get("achievements") or []
         ach_names = "、".join([dicts.achievement_dict.get(a, a) for a in ach_list]) if ach_list else "无"
-        ach_text = f"成就：{len(ach_list)}/24\n已达成：{ach_names}"
+        ach_text = f"成就：{len(ach_list)}/24\n    已达成：{ach_names}"
         text = f"    ID：{uid}\n"\
         f"    昵称：{user_data['name']}\n"\
         f"    种族：{dicts.species_dict[user_data['species']]}\n"\
@@ -854,6 +920,9 @@ class Utils:
             str: 描述文本
         """
         
+        # 转生苹果必须在商店走二次确认流程，不能通过随机事件等途径直接“获得”
+        if id == 15:
+            return "转生苹果需要在商店购买并使用。\n"
         str = ''
         str += f"你获得了物品：{dicts.shop_dict[id]}\n"
         if id == 1:

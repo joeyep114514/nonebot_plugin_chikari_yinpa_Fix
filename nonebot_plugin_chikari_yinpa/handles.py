@@ -19,8 +19,11 @@ from .dicts import dicts
 MAX_NAME_LENGTH = 32
 
 # 加入银趴创建流程的临时状态缓存（内存态，重启即失效）
-# 结构：pending_join[uid] = {"step":"species"|"points", "species":int, "name":str, "ts":time()}
+# 结构：pending_join[uid] = {"step":"species"|"points", "species":int, "name":str, "ts":time(), "reincarnate":bool}
 pending_join = {}
+# 转生苹果的二次确认缓存（内存态，重启即失效）
+# 结构：pending_reincarnate[uid] = {"ts":time()}
+pending_reincarnate = {}
 
 class yinpa_Handles():
     """消息处理
@@ -134,11 +137,35 @@ class yinpa_Handles():
         return pj
 
     @staticmethod
-    async def _species_select_text():
+    def is_reincarnate_pending(uid: str):
+        """判断用户是否在等待转生苹果的购买确认（含超时清理）
+
+        Args:
+            uid (str): 用户id
+
+        Returns:
+            bool: 是否处于确认流程
+        """
+
+        pj = pending_reincarnate.get(uid)
+        if not pj:
+            return False
+        plugin_config = _get_plugin_config()
+        if time() - pj["ts"] > plugin_config.chikari_yinpa_join_timeout:
+            pending_reincarnate.pop(uid, None)
+            return False
+        return True
+
+    @staticmethod
+    async def _species_select_text(reincarnate: bool = False):
         """选择种族的提示文案
+
+        Args:
+            reincarnate (bool): 是否为转生流程
         """
         
-        return "请选择加入的种族【回复对应序号】\n0随机 1人类 2猫娘 3精灵 4天使 5魅魔 6舰娘 7吸血鬼"
+        action = "转生后的" if reincarnate else "加入的"
+        return f"请选择{action}种族【回复对应序号】\n0随机 1人类 2猫娘 3精灵 4天使 5魅魔 6舰娘 7吸血鬼"
 
     @staticmethod
     async def _points_input_text(species: int):
@@ -272,7 +299,10 @@ class yinpa_Handles():
             if isinstance(result, str):
                 await matcher.finish(f"分配错误：{result}\n请重新按格式 \"**/**/**/**/**/**\" 回复（体质/意志为偶数），或回复\"随机\"自动分配")
             pts = result
-        await yinpa_Handles._create_user(matcher, uid, pj, pts)
+        if pj.get("reincarnate"):
+            await yinpa_Handles._reincarnate_user(matcher, uid, pj, pts)
+        else:
+            await yinpa_Handles._create_user(matcher, uid, pj, pts)
 
     @staticmethod
     async def _create_user(matcher: Matcher, uid: str, pj: dict, pts: list):
@@ -301,6 +331,72 @@ class yinpa_Handles():
         pending_join.pop(uid, None)
         await matcher.send("创建角色成功！")
         await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(uid)))
+
+    @staticmethod
+    async def _reincarnate_user(matcher: Matcher, uid: str, pj: dict, pts: list):
+        """转生第三步：扣除转生苹果费用并重建角色
+
+        Args:
+            matcher (Matcher): 匹配器
+            uid (str): 用户id
+            pj (dict): 转生状态
+            pts (list): 六项自由点
+        """
+
+        if not Utils.yinpa_user_presence_check(uid):
+            pending_join.pop(uid, None)
+            await matcher.finish("你已不在银趴中，转生已取消。")
+        price = dicts.shop_price_dict[15]
+        current_money = await Utils.get_money(uid)
+        if current_money < price:
+            pending_join.pop(uid, None)
+            await matcher.finish(f"错误：你的 YPD 已不足 {price}（当前 {current_money}），转生已取消。")
+        await Utils.add_money(uid, -price)
+        DHandles.user_reincarnate_with_points(uid, pj["species"], pts)
+        pending_join.pop(uid, None)
+        await matcher.send(f"转生成功！已消耗 {price} YPD，技能与属性已重置，金钱与成就保留。")
+        await matcher.finish(MessageSegment.image(await Utils.get_user_info_image(uid)))
+
+    @staticmethod
+    async def yinpa_reincarnate_confirm(matcher: Matcher, event: GroupMessageEvent):
+        """处理转生苹果的二次确认（确认 → 进入种族选择；其他回复 → 取消）
+
+        Args:
+            matcher (Matcher): 匹配器
+            event (GroupMessageEvent): 群消息事件
+        """
+
+        uid = event.get_user_id()
+        if not yinpa_Handles.is_reincarnate_pending(uid):
+            pending_reincarnate.pop(uid, None)
+            await matcher.finish("转生苹果确认已超时，请重新购买。")
+        if not Utils.group_enable_check(event.group_id):
+            pending_reincarnate.pop(uid, None)
+            await matcher.finish("本群银趴已禁用")
+        if not Utils.yinpa_user_presence_check(uid):
+            pending_reincarnate.pop(uid, None)
+            await matcher.finish("你已不在银趴中")
+        text = event.get_plaintext().strip()
+        if text not in ("确认", "确定", "是", "yes", "y", "Y", "确认购买"):
+            pending_reincarnate.pop(uid, None)
+            await matcher.finish("已取消转生苹果的购买。")
+        price = dicts.shop_price_dict[15]
+        current_money = await Utils.get_money(uid)
+        if current_money < price:
+            pending_reincarnate.pop(uid, None)
+            await matcher.finish(f"错误：你的 YPD 不足（需要 {price}，当前 {current_money}），已取消。")
+        pending_reincarnate.pop(uid, None)
+        pending_join[uid] = {
+            "step": "species",
+            "species": None,
+            "name": data[uid]["name"],
+            "ts": time(),
+            "reincarnate": True,
+        }
+        prompt = (f"已确认购买【转生苹果】。\n"
+                  f"转生完成时将扣除 {price} YPD，并清空技能、状态与属性（金钱与成就保留）。\n\n"
+                  + await yinpa_Handles._species_select_text(True))
+        await matcher.finish(MessageSegment.image(Utils.text_to_image(prompt)))
 
     async def yinpa_join_step(
             matcher: Matcher,event: GroupMessageEvent
@@ -755,7 +851,7 @@ class yinpa_Handles():
 
     @staticmethod
     def _shop_list_text(header: str = "") -> str:
-        """生成银趴商店列表文本（与钓鱼插件商店格式一致：▶ 条目 + 底部操作提示）
+        """生成银趴商店列表文本（▶ 条目 + 商品简述 + 底部操作提示）
 
         Args:
             header (str): 可选的前置文本（如错误提示行）
@@ -767,6 +863,9 @@ class yinpa_Handles():
         lines = ["===== 银趴商店 =====", ""]
         for i in list(dicts.shop_dict.keys()):
             lines.append(f"▶ {i}. {dicts.shop_dict[i]}：{dicts.shop_price_dict[i]} YPD")
+            brief = dicts.shop_brief_dict.get(i)
+            if brief:
+                lines.append(f"    {brief}")
         lines.append("")
         lines.append("详情：/yinpa_help shop <商品名或ID>")
         lines.append("购买：/shop <商品名或ID>（多个用空格分隔）")
@@ -786,6 +885,8 @@ class yinpa_Handles():
         uid = event.get_user_id()
         if not Utils.yinpa_user_presence_check(uid):
             await matcher.finish("您还未加入银趴！\ntips：请使用 /yinpa_join 或 /加入银趴 加入银趴")
+        if yinpa_Handles.is_join_pending(uid):
+            await matcher.finish("你正在进行转生流程，请先完成种族选择与属性分配")
         command = args.extract_plain_text()
         shop_key = command.split()
         await Utils.refresh_data(uid)
@@ -806,6 +907,21 @@ class yinpa_Handles():
                     await matcher.finish(MessageSegment.image(Utils.text_to_image(yinpa_Handles._shop_list_text("错误：该商品不存在"))))
                 price += dicts.shop_price_dict[rid]
                 resolved.append(rid)
+            if 15 in resolved:
+                if len(resolved) != 1:
+                    await matcher.finish("错误：【转生苹果】需要单独购买，不能与其他商品一起结算。")
+                price = dicts.shop_price_dict[15]
+                current_money = await Utils.get_money(uid)
+                if current_money < price:
+                    await matcher.finish(f"错误：你的 YPD 不足！\n转生苹果售价：{price}\n你的 YPD：{current_money}")
+                if yinpa_Handles.is_reincarnate_pending(uid):
+                    await matcher.finish("你已经提交过转生苹果的购买确认，请先回复「确认」，或回复其他内容取消。")
+                pending_reincarnate[uid] = {"ts": time()}
+                prompt = (f"确认购买【转生苹果】？\n\n"
+                          f"售价：{price} YPD（将在转生完成时扣除）\n"
+                          f"效果：清空当前技能、状态与属性，保留金钱与成就；随后重新选择种族并分配属性点。\n\n"
+                          f"回复「确认」继续；回复其他内容取消。")
+                await matcher.finish(MessageSegment.image(Utils.text_to_image(prompt)))
             if 11 in resolved and Utils.get_skill(uid,9):
                 await matcher.finish("错误：你已经拥有【屹立不倒】，不能重复购买！")
             # 屹立不倒为固定1级技能，单次购买列表中重复会出现"第二个被拒绝但已扣款"，提前拦截
@@ -988,7 +1104,7 @@ class yinpa_Handles():
                     msg += f"触发事件：你的{dicts.attribute_dict[i]}： {data[uid][i]} → {new_value}\n"
                     DHandles.data_set(uid,i,new_value)
                 elif d >= 4 and d <= 6:
-                    l = list(dicts.shop_dict.keys())
+                    l = [i for i in dicts.shop_dict.keys() if i != 15]
                     i = Utils.dice(len(l),(int)(uid) ^ 107)
                     msg += await Utils.gain_item(uid,l[i - 1])
                 elif d >= 7 and d <= 9:
@@ -998,7 +1114,7 @@ class yinpa_Handles():
                 elif d == 10:
                     d = Utils.dice(5000,(int)(uid) ^ 109)
                     await Utils.add_money(uid, d)
-                    l = list(dicts.shop_dict.keys())
+                    l = [i for i in dicts.shop_dict.keys() if i != 15]
                     i = Utils.dice(len(l),(int)(uid) ^ 110)
                     msg += f"触发稀有奇遇：金钱 +{d} YPD\n"
                     msg += await Utils.gain_item(uid,l[i - 1])
@@ -1072,3 +1188,12 @@ def _join_pending_rule(event: GroupMessageEvent):
     if not isinstance(event, GroupMessageEvent):
         return False
     return yinpa_Handles.is_join_pending(event.get_user_id())
+
+
+def _reincarnate_pending_rule(event: GroupMessageEvent):
+    """on_message 规则：仅当该用户等待转生苹果购买确认时接管其消息"""
+
+    if not isinstance(event, GroupMessageEvent):
+        return False
+    # 这里用原始缓存判断，超时清理交给处理器，确保用户能收到“确认已超时”的提示
+    return event.get_user_id() in pending_reincarnate
