@@ -372,7 +372,11 @@ class Utils:
         wrapped_lines = []
         for line in liens:
             wrapped_lines.extend(_wrap_line(line))
-        liens = wrapped_lines[:max_lines]
+        # 超过行数上限时显式提示，而不是静默丢掉后面的内容
+        if len(wrapped_lines) > max_lines:
+            wrapped_lines = wrapped_lines[:max_lines]
+            wrapped_lines[-1] = "……（后续已省略）"
+        liens = wrapped_lines
 
         line_widths = [_line_width(line) for line in liens]
         image = Image.new("RGB", (max(1, int(max(line_widths, default=0))) + padding_x * 2, len(liens) * (fontSize + 5) + padding_y * 2), (255, 255, 255))
