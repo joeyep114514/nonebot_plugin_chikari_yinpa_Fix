@@ -26,12 +26,6 @@ _✨ 一个基于 NoneBot2 的银趴插件（修复版）✨_
 
 本项目是 `nonebot-plugin-chikari-yinpa-fix`，面向 QQ 群聊的 OneBot v11 角色扮演/养成插件。玩家通过签到、打工、商店、对战等指令积累 YPD 与属性，解锁技能和成就。所有长文本反馈统一由 Pillow 渲染为图片发送，避免群聊刷屏。
 
-设计目标：
-
-- **可配置**：初始属性、金钱、字体、图片宽度等通过 NoneBot 配置注入。
-- **可扩展**：种族、技能、状态、商品、工作全部集中在 `dicts.py`，新增内容改动面小。
-- **可维护**：JSON 原子写入、启动时数据迁移、失败恢复、防御式读取。
-
 ## 功能概览
 
 | 模块 | 说明 |
@@ -44,33 +38,7 @@ _✨ 一个基于 NoneBot2 的银趴插件（修复版）✨_
 | 转生 | 购买【转生苹果】二次确认后重选种族、重配属性，保留金钱与成就 |
 | 渲染 | 长消息/信息图/商店/帮助自动折行渲染，宽度可配置 |
 
-## 技术栈
-
-- Python 3.9+
-- [NoneBot2](https://v2.nonebot.dev/) + `nonebot-adapter-onebot` (OneBot v11)
-- Pillow（文本转图片）
-- `nonebot-plugin-localstore`、`nonebot-plugin-value`、`nonebot-plugin-orm`
-- 可选：`nonebot-plugin-fishing2`（钓鱼成就/统计互通）
-
-## 项目结构
-
-```text
-nonebot_plugin_chikari_yinpa/
-├── __init__.py       # 插件元数据、matcher 注册、启动钩子
-├── config.py         # Pydantic 配置模型
-├── data_handles.py   # JSON 持久化、原子写入、数据迁移、用户增删改
-├── dicts.py          # 种族/技能/状态/商品/工作/成就常量
-├── handles.py        # 指令处理器与交互流程
-├── utils.py          # 属性计算、随机检定、图片渲染
-└── resource/         # Noto 字体（主字体与 Emoji 字体）
-```
-
-运行时数据（`data.json` / `config.json`）由 `nonebot-plugin-localstore`
-管理，默认不在插件包内；只有未安装 localstore 时才会回退到包内 `data/` 目录。
-
 ## 安装
-
-### 作为 NoneBot 插件安装
 
 ```bash
 # nb-cli
@@ -87,17 +55,7 @@ pip install nonebot-plugin-chikari-yinpa-fix
 plugins = ["nonebot_plugin_chikari_yinpa"]
 ```
 
-### 从源码开发
-
-```bash
-git clone https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix.git
-cd nonebot_plugin_chikari_yinpa_Fix
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
-
-本仓库只包含插件本体，不包含 NoneBot 入口。本地运行需要准备一个 NoneBot2 项目，将本仓库路径加入 `plugins`，或使用 `nb plugin install` 后以开发模式加载。
+本仓库只包含插件本体，不包含 NoneBot 入口；请装入已有的 NoneBot2 项目后使用。
 
 ## 配置
 
@@ -134,7 +92,31 @@ pip install -e .
 | `/work`（别名 `工作`/`打工`） | 所有人 | 打工赚钱 |
 | `/transfer`（别名 `转账`） | 所有人 | 转账给他人 |
 
-> `shop` 别名可能与钓鱼插件冲突；使用 `ypshop` 可避免。
+> `shop` 与钓鱼插件的商店同名，本插件同时注册了 `ypshop` 别名。
+
+## 技术栈
+
+- Python 3.9+
+- [NoneBot2](https://v2.nonebot.dev/) + `nonebot-adapter-onebot` (OneBot v11)
+- Pillow（文本转图片）
+- `nonebot-plugin-localstore`、`nonebot-plugin-value`、`nonebot-plugin-orm`
+- 可选：`nonebot-plugin-fishing2`（钓鱼成就/统计互通）
+
+## 项目结构
+
+```text
+nonebot_plugin_chikari_yinpa/
+├── __init__.py       # 插件元数据、matcher 注册、启动钩子
+├── config.py         # Pydantic 配置模型
+├── data_handles.py   # JSON 持久化、原子写入、数据迁移、用户增删改
+├── dicts.py          # 种族/技能/状态/商品/工作/成就常量
+├── handles.py        # 指令处理器与交互流程
+├── utils.py          # 属性计算、随机检定、图片渲染
+└── resource/         # Noto 字体（主字体与 Emoji 字体）
+```
+
+运行时数据（`data.json` / `config.json`）由 `nonebot-plugin-localstore`
+管理，默认不在插件包内；只有未安装 localstore 时才会回退到包内 `data/` 目录。
 
 ## 维护与扩展
 
@@ -172,36 +154,14 @@ pip install -e .
 
 1. 在 `__init__.py` 中用 `on_command` / `on_message` 注册 matcher，设置 `priority` 与 `block`。
 2. 在 `handles.py` 的 `yinpa_Handles` 中实现处理器（签名通常为 `matcher, event, args`）。
-3. 如需多步交互，参考 `pending_join` / `pending_reincarnate` 的内存态缓存，并配合 `_join_pending_rule` / `_reincarnate_pending_rule` 注册高优先级 `on_message`。
+3. 如需多步交互，参考 `pending_join` / `pending_reincarnate` 的内存态缓存，并配合 `_join_pending_rule` / `_reincarnate_pending_rule` 注册 `on_message`（注意 `priority` 与其他指令的关系）。
 4. 同步更新 `dicts.yinpa_help_dict`、`help_aliases` 与本 README 的指令表。
 
-### 版本号
+## 预览
 
-发布前统一修改：
+（已过时）
 
-- `pyproject.toml` 的 `version`
-- `nonebot_plugin_chikari_yinpa/__init__.py` 的 `__version__`
-- `dicts.py` 主帮助标题中的版本号
-- `CHANGELOG.md` 新增对应版本段落
-
-## 测试与检查
-
-仓库暂未提供自动化测试套件；提交前至少执行：
-
-```bash
-python -m compileall -q nonebot_plugin_chikari_yinpa
-```
-
-并手动回归以下路径：`/info`、`/shop`、`/work` 长文本、`/yinpa_join` 创建流程、转生苹果确认/取消/超时。
-
-## 贡献
-
-提交 Issue 或 PR 时遵循以下约定：
-
-- 一个 PR 只做一类改动，说明动机、行为变化与回归范围；
-- 涉及数值平衡时同步更新 `dicts.py` 帮助文本与本 README；
-- 新增配置项时同步更新 `config.py`、配置表与 `CHANGELOG.md`；
-- 不提交运行时数据（localstore 目录或回退的 `data/`）或任何令牌/密钥。
+![image](image/img_1.png)
 
 ## 更新日志
 
@@ -210,9 +170,3 @@ python -m compileall -q nonebot_plugin_chikari_yinpa
 ## License
 
 [MIT](./LICENSE)
-
-## 预览
-
-（已过时）
-
-![image](image/img_1.png)
