@@ -62,9 +62,11 @@ nonebot_plugin_chikari_yinpa/
 ├── dicts.py          # 种族/技能/状态/商品/工作/成就常量
 ├── handles.py        # 指令处理器与交互流程
 ├── utils.py          # 属性计算、随机检定、图片渲染
-├── data/             # 运行时数据（data.json / config.json）
 └── resource/         # Noto 字体（主字体与 Emoji 字体）
 ```
+
+运行时数据（`data.json` / `config.json`）由 `nonebot-plugin-localstore`
+管理，默认不在插件包内；只有未安装 localstore 时才会回退到包内 `data/` 目录。
 
 ## 安装
 
@@ -122,7 +124,7 @@ pip install -e .
 | 指令 | 权限 | 说明 |
 |---|---|---|
 | `/yinpa_control <enable/disable>` | 主人/群主/管理员 | 开启/关闭本群银趴 |
-| `/help [分类]` | 所有人 | 查看帮助（新手指南/种族/技能/状态/工作/商店） |
+| `/yinpa_help [分类]`（别名 `银趴帮助`） | 所有人 | 查看帮助（新手指南/种族/技能/状态/工作/商店） |
 | `/yinpa_join [昵称]` | 所有人 | 加入银趴（三步创建流程） |
 | `/yinpa_leave [key]` | 所有人 | 离开银趴（二次确认 key） |
 | `/sign_in` | 所有人 | 每日签到 |
@@ -138,7 +140,7 @@ pip install -e .
 
 ### 数据与持久化
 
-- 用户数据保存在 `data/data.json`，群开关保存在 `data/config.json`。
+- 用户数据与群开关由 `nonebot-plugin-localstore` 保存为 `data.json` / `config.json`，默认在系统用户数据目录下（具体路径由 localstore 决定）；未安装 localstore 时回退到插件包内 `data/`。
 - 所有写入走 `DHandles.data_set` / `DHandles.file_save`，采用「临时文件 + `os.replace`」原子替换。
 - 启动时会修复缺失的 `skill` 字段；JSON 损坏会备份为 `*.corrupt.<timestamp>` 后重置。
 - 金钱通过 `nonebot-plugin-value` 的 `YPD` 货币账户单独存储，不在 `data.json` 中。
@@ -150,7 +152,7 @@ pip install -e .
 
 - 按配置的 `chikari_yinpa_image_max_width` 折行，画布宽度不会超过该值。
 - 优先在 `、，。；：！？` 等标点后断行，续行带悬挂缩进，并处理行首禁则。
-- 单行超过 2000 字或总行数超过 100 行会被截断，用于防御超大图分配。
+- 单行超过 2000 字或总行数超过 100 行会被截断（追加省略提示），用于防御超大图分配。
 - 信息图由 `Utils.get_user_info_image()` 组装文本后复用同一渲染器。
 
 新增图片消息直接调用 `MessageSegment.image(Utils.text_to_image(text))`，无需自行计算宽度。
@@ -199,7 +201,7 @@ python -m compileall -q nonebot_plugin_chikari_yinpa
 - 一个 PR 只做一类改动，说明动机、行为变化与回归范围；
 - 涉及数值平衡时同步更新 `dicts.py` 帮助文本与本 README；
 - 新增配置项时同步更新 `config.py`、配置表与 `CHANGELOG.md`；
-- 不提交 `data/` 下的运行时数据或任何令牌/密钥。
+- 不提交运行时数据（localstore 目录或回退的 `data/`）或任何令牌/密钥。
 
 ## 更新日志
 

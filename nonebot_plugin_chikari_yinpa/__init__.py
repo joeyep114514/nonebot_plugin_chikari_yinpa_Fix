@@ -79,10 +79,11 @@ on_yinpa_join_step = on_message(
     handlers=[yinpa_Handles.yinpa_join_step]
 )
 
-# 转生苹果二次确认：优先级高于普通指令，避免用户回复“确认”时被其他 matcher 抢走
+# 转生苹果二次确认：排在普通指令（priority=10）之后、创建流程（1000）之前。
+# 这样等待确认期间用户仍能正常使用 /sign_in、/work 等指令，不会被当成“其他内容”吞掉。
 on_yinpa_reincarnate_confirm = on_message(
     rule=Rule(_reincarnate_pending_rule),
-    priority=5,
+    priority=20,
     block=True,
     handlers=[yinpa_Handles.yinpa_reincarnate_confirm]
 )

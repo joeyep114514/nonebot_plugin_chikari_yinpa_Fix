@@ -222,7 +222,8 @@ class DHandles():
             'intelligence':final["intelligence"],
             'charm':final["charm"],
             'state':[],
-            'skill':[],
+            # 初始技能在计算 HP 上限之前写入，保证舰装（ID6）的 HP 加成对新建角色同样生效
+            'skill':[[i,0,1] for i in spec["skill"]],
             "passive_times":0,
             "active_times":0,
             "last_sign_in_time":0,
