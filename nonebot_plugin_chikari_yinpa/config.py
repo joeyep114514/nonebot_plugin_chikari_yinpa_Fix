@@ -24,6 +24,8 @@ class Config(BaseModel):
     """绘图所用主字体。默认：'模块路径/resource/NotoSansCJKsc-VF.ttf'"""
     chikari_yinpa_emoji_font:Path = Path(__file__).parent / "resource" / "NotoEmoji.ttf"
     """绘图所用 Emoji 字体。默认：'模块路径/resource/NotoEmoji.ttf'"""
+    chikari_yinpa_image_max_width: Optional[int] = 600
+    """文字图片的最大宽度（像素，含左右留白）。默认：600"""
 
 try:
     plugin_config = get_plugin_config(Config)

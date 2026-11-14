@@ -245,6 +245,51 @@ class DHandles():
         data[uid]["hp_c"] = int((data[uid]["constitution"] + 10) * 10) + _ship_hp_bonus(uid)
         DHandles.file_save()
         return
+
+    def user_reincarnate_with_points(uid: str,species: int,pts: list):
+        """转生：按新种族模板重建属性，清空技能/状态，保留金钱、成就与历史次数
+
+        与 user_add_with_points 的区别是原地更新已有用户记录，不重置 money
+        （money 由 nonebot_plugin_value 单独存储）、成就与统计次数。
+
+        Args:
+            uid (str): 用户id
+            species (int): 新种族id
+            pts (list): 六项自由点投入 [力量, 体质, 技巧, 意志, 智力, 魅力]
+        """
+
+        spec = dicts.species_initial_ability[species]
+        rate = dicts.attribute_order["rate"]
+        keys = dicts.attribute_order["keys"]
+        final = {}
+        for i in range(6):
+            inc = int(pts[i] * rate[i])
+            total = spec["base"][i] + inc
+            final[keys[i]] = total if spec["cap"][i] is None else min(total, spec["cap"][i])
+        plugin_config = _get_plugin_config()
+        ud = data[uid]
+        ud["species"] = species
+        ud["sex_value"] = plugin_config.chikari_yinpa_initial_sex_value
+        ud["penis_length"] = plugin_config.chikari_yinpa_initial_penis_length
+        ud["vagina_depth"] = plugin_config.chikari_yinpa_initial_vagina_depth
+        for key, value in final.items():
+            ud[key] = value
+        # 清空旧技能/状态，重新授予新种族的初始技能
+        ud["skill"] = [[i, 0, 1] for i in spec["skill"]]
+        ud["state"] = []
+        ud["hp_v"] = int((ud["volition"] + 10) * 5) + _ship_hp_bonus(uid)
+        ud["hp_c"] = int((ud["constitution"] + 10) * 10) + _ship_hp_bonus(uid)
+        # 属性重建后 D10 预算池也重置，避免新角色被旧额度卡住
+        ud["d10_used"] = {}
+        ud["brick_count"] = 0
+        ud["live_bonus"] = False
+        ud["last_live_time"] = 0
+        ud["live_broken"] = False
+        ud["last_operation_time"] = 0
+        ud["next_work_time"] = 0
+        ud["last_refresh_time"] = time()
+        DHandles.file_save()
+        return
         
     def user_remove(uid: str):
         """将用户移出银趴

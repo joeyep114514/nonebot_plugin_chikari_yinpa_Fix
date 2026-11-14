@@ -5,8 +5,7 @@
 
 # nonebot-plugin-chikari-yinpa-fix
 
-_✨ NoneBot 一个普通的银趴插件（修复版）✨_
-
+_✨ 一个基于 NoneBot2 的银趴插件（修复版）✨_
 
 <a href="./LICENSE">
     <img src="https://img.shields.io/github/license/joeyep114514/nonebot_plugin_chikari_yinpa_Fix" alt="license">
@@ -14,161 +13,203 @@ _✨ NoneBot 一个普通的银趴插件（修复版）✨_
 <a href="https://pypi.python.org/pypi/nonebot-plugin-chikari-yinpa-fix">
     <img src="https://img.shields.io/pypi/v/nonebot-plugin-chikari-yinpa-fix.svg" alt="pypi">
 </a>
-<img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="python">
+<img src="https://img.shields.io/badge/python-3.9+-blue.svg" alt="python">
+
+**当前版本：2.1.8**
 
 </div>
 
+> [!WARNING]
+> 本插件包含 NSFW 内容，应仅在合适的群聊/环境中部署。源项目已进入半停更状态，本仓库在其基础上做修复、平衡性调整与功能维护。
 
-## 📖 介绍
+## 简介
 
-### 警告：本插件包含NSFW内容！
-### 原作者称由于学业问题，源项目更新放缓，但实际已进入半停更状态
-这是一个基于NoneBot 2的银趴插件，由于源项目年久失修，本项目在此基础上进行了修复、完善以及多次平衡性调整，使其可供正常游玩
+本项目是 `nonebot-plugin-chikari-yinpa-fix`，面向 QQ 群聊的 OneBot v11 角色扮演/养成插件。玩家通过签到、打工、商店、对战等指令积累 YPD 与属性，解锁技能和成就。所有长文本反馈统一由 Pillow 渲染为图片发送，避免群聊刷屏。
 
-## 💿 安装
+设计目标：
 
-<details open>
-<summary>使用 nb-cli 安装</summary>
-在 nonebot2 项目的根目录下打开命令行, 输入以下指令即可安装
+- **可配置**：初始属性、金钱、字体、图片宽度等通过 NoneBot 配置注入。
+- **可扩展**：种族、技能、状态、商品、工作全部集中在 `dicts.py`，新增内容改动面小。
+- **可维护**：JSON 原子写入、启动时数据迁移、失败恢复、防御式读取。
 
-    nb plugin install nonebot-plugin-chikari-yinpa-fix
+## 功能概览
 
-</details>
+| 模块 | 说明 |
+|---|---|
+| 角色创建 | 昵称 → 种族 → 自由属性点三步流程，支持随机种族/随机加点 |
+| 日常 | 签到、打工（搬砖/援交/直播/写文/打架/探险）、转账 |
+| 对战 | 透、榨、冲、扣，结算意志/体质 HP、状态与技能效果 |
+| 商店 | 伟哥、技能书、D10、转生苹果等 15 件商品；每条商品带简述 |
+| 成长 | 技能升级、状态、D10 属性预算池、24 项成就 |
+| 转生 | 购买【转生苹果】二次确认后重选种族、重配属性，保留金钱与成就 |
+| 渲染 | 长消息/信息图/商店/帮助自动折行渲染，宽度可配置 |
 
-<details>
-<summary>使用包管理器安装</summary>
-在 nonebot2 项目的插件目录下, 打开命令行, 根据你使用的包管理器, 输入相应的安装命令
+## 技术栈
 
-<details>
-<summary>pip</summary>
+- Python 3.9+
+- [NoneBot2](https://v2.nonebot.dev/) + `nonebot-adapter-onebot` (OneBot v11)
+- Pillow（文本转图片）
+- `nonebot-plugin-localstore`、`nonebot-plugin-value`、`nonebot-plugin-orm`
+- 可选：`nonebot-plugin-fishing2`（钓鱼成就/统计互通）
 
-    pip install nonebot-plugin-chikari-yinpa-fix
-</details>
-<details>
-<summary>pdm</summary>
+## 项目结构
 
-    pdm add nonebot-plugin-chikari-yinpa-fix
-</details>
-<details>
-<summary>poetry</summary>
+```text
+nonebot_plugin_chikari_yinpa/
+├── __init__.py       # 插件元数据、matcher 注册、启动钩子
+├── config.py         # Pydantic 配置模型
+├── data_handles.py   # JSON 持久化、原子写入、数据迁移、用户增删改
+├── dicts.py          # 种族/技能/状态/商品/工作/成就常量
+├── handles.py        # 指令处理器与交互流程
+├── utils.py          # 属性计算、随机检定、图片渲染
+├── data/             # 运行时数据（data.json / config.json）
+└── resource/         # Noto 字体（主字体与 Emoji 字体）
+```
 
-    poetry add nonebot-plugin-chikari-yinpa-fix
-</details>
-<details>
-<summary>conda</summary>
+## 安装
 
-    conda install nonebot-plugin-chikari-yinpa-fix
-</details>
+### 作为 NoneBot 插件安装
 
-打开 nonebot2 项目根目录下的 `pyproject.toml` 文件, 在 `[tool.nonebot]` 部分追加写入
+```bash
+# nb-cli
+nb plugin install nonebot-plugin-chikari-yinpa-fix
 
-    plugins = ["nonebot_plugin_chikari_yinpa"]
+# 或 pip
+pip install nonebot-plugin-chikari-yinpa-fix
+```
 
-</details>
-## ⚙️ 配置
+然后在 NoneBot 项目的 `pyproject.toml` 中启用：
 
-在 nonebot2 项目的`.env`文件中添加下表中的必填配置
+```toml
+[tool.nonebot]
+plugins = ["nonebot_plugin_chikari_yinpa"]
+```
 
-| 配置项 | 必填 | 默认值 | 说明 |
-|:-----:|:----:|:----:|:----:|
-| chikari_yinpa_initial_sex_value | 否 | 50 | 目前无作用 |
-| chikari_yinpa_initial_penis_length | 否 | 10 | 初始长度 |
-| chikari_yinpa_initial_vagina_depth | 否 | 10 | 初始深度 |
-| chikari_yinpa_initial_money | 否 | 100 | 初始金钱 |
-| chikari_yinpa_font | 否 | Path(__file__).parent / "resource" / "NotoSansCJKsc-VF.ttf" | 绘图所用 Noto Sans CJK 主字体（可变字体，自动应用 Regular 字重） |
-| chikari_yinpa_emoji_font | 否 | Path(__file__).parent / "resource" / "NotoEmoji.ttf" | 绘图所用黑白 Noto Emoji 字体 |
+### 从源码开发
 
-## 🎉 使用
-### 指令表
-#### help指令中的提示以"/"为指令前缀，可根据实际情况自行修改
-#### 部分指令存在别名，可在help指令中查询
-| 指令 | 权限 | 需要@ | 范围 | 说明 |
-|:-----:|:----:|:----:|:----:|:----:|
-| yinpa_control | 主人/群主/管理员 | 否 | 群聊 | 控制本群银趴的开启/关闭 |
-| help | 无 | 否 | 私聊/群聊 | 查询Chikari_Yinpa_Fix的帮助 |
-| sign_in | 无 | 否 | 私聊/群聊 | 每日打卡，每天可使用一次，增加长度、深度、金钱 |
-| yinpa_join | 无 | 否 | 私聊/群聊 | 加入银趴！ |
-| yinpa_leave | 无 | 否 | 私聊/群聊 | 离开银趴！ |
-| info | 无 | 否 | 私聊/群聊 | 查询自己或某人的银趴信息 |
-| tou | 无 | 否 | 私聊/群聊 | 透某人 |
-| zha | 无 | 否 | 私聊/群聊 | 榨某人 |
-| chong | 无 | 否 | 私聊/群聊 | 冲一发，能够增加或减少一定长度 |
-| kou | 无 | 否 | 私聊/群聊 | 扣一次，能够增加少量深度 |
-| shop | 无 | 否 | 私聊/群聊 | 花费金钱购买商品（银趴商店） |
-| work | 无 | 否 | 私聊/群聊 | 工作，获得金钱及其他东西 |
-| transfer | 无 | 否 | 私聊/群聊 | 转账给他人 |
+```bash
+git clone https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix.git
+cd nonebot_plugin_chikari_yinpa_Fix
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
 
-## 🔭 TODO
+本仓库只包含插件本体，不包含 NoneBot 入口。本地运行需要准备一个 NoneBot2 项目，将本仓库路径加入 `plugins`，或使用 `nb plugin install` 后以开发模式加载。
 
-### 如果有什么好的想法，欢迎提交[issue](https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix/issues)或[pr](https://github.com/joeyep114514/nonebot_plugin_chikari_yinpa_Fix/pulls)
+## 配置
 
-- [x] 将经济相关拆分为单独的插件，未来可与其他插件互通
+配置项通过 NoneBot 项目的 `.env` / `.env.prod` 注入（均为可选项）：
 
-- [ ] 排名功能（群榜，总榜）
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `chikari_yinpa_initial_sex_value` | `50` | 初始性别倾向，目前无实际作用 |
+| `chikari_yinpa_initial_penis_length` | `10` | 初始长度 |
+| `chikari_yinpa_initial_vagina_depth` | `10` | 初始深度 |
+| `chikari_yinpa_initial_money` | `100` | 新建角色初始 YPD |
+| `chikari_yinpa_initial_free_points` | `180` | 普通种族自由属性点 |
+| `chikari_yinpa_human_bonus_points` | `40` | 人类额外自由属性点 |
+| `chikari_yinpa_constitution_volition_ratio` | `2` | 体质/意志兑换率（每 2 点换 1 属性） |
+| `chikari_yinpa_join_timeout` | `600` | 创建/转生流程超时时间（秒） |
+| `chikari_yinpa_font` | `resource/NotoSansCJKsc-VF.ttf` | 主字体（可变字体，自动应用 Regular 字重） |
+| `chikari_yinpa_emoji_font` | `resource/NotoEmoji.ttf` | 黑白 Emoji 字体 |
+| `chikari_yinpa_image_max_width` | `600` | 图片最大宽度（px，含左右留白，范围 320–1600） |
 
-- [ ] 誓约系统
+## 指令
 
-- [x] 成就系统
+指令前缀以 NoneBot 配置为准，以下以 `/` 示意；部分指令有中文别名。
 
-- [ ] bot随机自主出击
+| 指令 | 权限 | 说明 |
+|---|---|---|
+| `/yinpa_control <enable/disable>` | 主人/群主/管理员 | 开启/关闭本群银趴 |
+| `/help [分类]` | 所有人 | 查看帮助（新手指南/种族/技能/状态/工作/商店） |
+| `/yinpa_join [昵称]` | 所有人 | 加入银趴（三步创建流程） |
+| `/yinpa_leave [key]` | 所有人 | 离开银趴（二次确认 key） |
+| `/sign_in` | 所有人 | 每日签到 |
+| `/info [@某人]` | 所有人 | 查看自己/他人信息图 |
+| `/tou` `/zha` `/chong` `/kou` | 所有人 | 互动与对战 |
+| `/shop`（别名 `ypshop`/`银趴商店`） | 所有人 | 商店列表/购买 |
+| `/work`（别名 `工作`/`打工`） | 所有人 | 打工赚钱 |
+| `/transfer`（别名 `转账`） | 所有人 | 转账给他人 |
 
-- [x] 单独的钓鱼插件
+> `shop` 别名可能与钓鱼插件冲突；使用 `ypshop` 可避免。
 
-## 📝 更新日志
+## 维护与扩展
 
-### v2.1.7
-- 属性模型重构：各属性不再区分基础值与当前值，各类加成直接生效；检定（失神/昏迷/工作检定）与工作收益统一使用增益后的数值
-- 属性上限规则统一：体质与意志上限 80（含各类加成，D10/探险提升同步封顶；吸血鬼种族体质上限 100→80），其余属性（力量/技巧/智力/魅力）无上限（取消原种族 100/80 上限）
-- 商店价格调整：商品1 100→300、商品2 500→800、商品3 100→300（详见商店价格表）
-- 商品3（精力药水）在 HP 已满时禁止购买并提示，避免无效消费
-- 精简创建角色流程提示与种族介绍文案（信息不变，篇幅大幅缩短）
-- 商店指令改为 `ypshop`（别名：银趴商店/买/买东西/店），与钓鱼插件的 `shop` 商店区分，避免指令冲突
-- 图片渲染四周增加留白，文字不再贴边
-- Bug 修复：图片文字渲染右缘不再被裁切。画布宽度改为按字符实际墨水范围计算（而非字面步进求和），解决行尾字母（y/f/j 等下伸字形）、`★●▲` 等符号及 emoji 因墨水超出步进而被裁掉、表现为“一行文字显示不全”的问题
-- Bug 修复：过长的单行不再在折行前被截断丢字。自动换行改为先按像素完整折行、再应用行数上限，单行安全上限由 100 字放宽至 2000 字，超长昵称/长文本会完整折行显示（总行数仍有 100 行上限防止超大图片分配）
-- 商店列表改为统一格式：`===== 店名 =====` 标题 + `▶ 条目` + 底部购买提示（与钓鱼插件商店一致）
-- 数据迁移：启动时自动为存量用户补齐缺失的 `skill` 字段（原子写回），旧版本用户升级后不会因缺字段崩溃；同时所有技能读写点改为防御式访问，`skill_refresh` 使用 `setdefault` 保证写入不丢失
-- 平衡性调整：探险（工作6）特殊事件触发概率从 30% 下调至 10%（工作帮助文本同步更新）
-- 精力药水（商品3）回复 HP 封顶至当前 HP 上限（含舰装加成），不再出现溢出数值
-- Bug 修复：`/work` 传入非数字参数（如 `/work abc`）导致命令无响应；单次购买列表重复指定商品11（屹立不倒）会扣双份钱但只发货一份，现提前拦截提示
-- 健壮性加固：新增 `safe_int` 安全整数转换，`str.isdigit()` 对上标（²）、带圈数字（①）等 Unicode 字符误判为数字但 `int()` 会抛错，此前 `/work ²`、`/ypshop ①`、`/transfer ²`、`/yinpa_help skill ²` 及建号流程回复此类字符均会使命令无响应，现全部统一走安全解析并给出错误提示
-- Bug 修复：商店按名称购买扣款后崩溃、重复购买商品11仍扣款、舰装破损后等级被重置为1、购买舰装升级书会清除破损冷却、数据文件改为原子写入并在损坏时自动备份恢复、帮助命令非法参数崩溃、商品12效果不落盘、新建用户缺失技能字段导致的潜在崩溃等
-- 帮助文本与代码一致性修正：种族属性上限、状态/商品描述公式、失神期间技能失效说明、转账限制说明、指南中的属性与收益说明
-- 技能平衡性调整：
-  - 猫化（ID2）攻防加成从 `1d(30√L)` 调整为 `1d(20√L)`
-  - 自然之心（ID3）攻防加成从 `1d(智力×√L/2)` 调整为 `1d(智力×√L/3)`
-  - 圣体（ID4）/ 淫纹（ID5）加成从 `1d(80√L)` 调整为 `1d(50√L)`
-  - 舰装（ID6）机制重做：不再增加力量/体质/意志属性，改为意志HP、体质HP上限各增加 `100√L`
-  - 猩红之影（ID7）白天惩罚改为 `15/√L`、夜晚加成改为 `10√L`
-  - 弱点（ID15）改为每次受击时 `1d100 < 30√L` 则额外受到 `1d500`（掷骰）伤害（等级越高触发概率越大）
-- 同步更新技能帮助文本
+### 数据与持久化
 
-### v2.0.7
-- 文本转图片（透/榨等反馈、帮助、商店、工作列表）新增自动换行，长文本不再渲染成超宽长条图
-- 信息图（/info）属性只显示当前值，不再显示基础值双栏（力量/体质/技巧/意志/智力/魅力）
+- 用户数据保存在 `data/data.json`，群开关保存在 `data/config.json`。
+- 所有写入走 `DHandles.data_set` / `DHandles.file_save`，采用「临时文件 + `os.replace`」原子替换。
+- 启动时会修复缺失的 `skill` 字段；JSON 损坏会备份为 `*.corrupt.<timestamp>` 后重置。
+- 金钱通过 `nonebot-plugin-value` 的 `YPD` 货币账户单独存储，不在 `data.json` 中。
+- 修改数据结构时，需在 `data_handles.py` 的启动迁移段补充兼容逻辑，避免存量用户升级崩溃。
 
-### v2.0.6
-- 转账取消冷却与解锁门槛，只要余额充足即可转账，无任何限制
-- 工作冷却固定为 1 小时，并跨注销保存（注销重注册后冷却仍保留）
+### 图片渲染
 
-### v2.0.2
+所有长文本统一走 `Utils.text_to_image()`：
 
-- README 新增更新日志章节
-- 主帮助版本号与插件版本对齐
+- 按配置的 `chikari_yinpa_image_max_width` 折行，画布宽度不会超过该值。
+- 优先在 `、，。；：！？` 等标点后断行，续行带悬挂缩进，并处理行首禁则。
+- 单行超过 2000 字或总行数超过 100 行会被截断，用于防御超大图分配。
+- 信息图由 `Utils.get_user_info_image()` 组装文本后复用同一渲染器。
 
-### v2.0.1
+新增图片消息直接调用 `MessageSegment.image(Utils.text_to_image(text))`，无需自行计算宽度。
 
-- 长消息（PVP 结果、商店/工作列表、帮助等）渲染为图片发送，短消息保持纯文本
-- 数值展示与计算统一四舍五入保留两位小数
-- 新增新手引导式主帮助（/yinpa_help），完善工作/商店/D10 说明
-- PyPI 发布仅限主分支或 tag 触发
+### 扩展商店
 
-### v2.0.0
+新增商品通常涉及 `dicts.py` 的四处修改：
 
-- 平衡性调整：工作系统、吸血鬼、D10 预算池、成就系统
-- 适配独立钓鱼插件，成就/统计互通
+1. `shop_dict`：`id -> 商品名`
+2. `shop_price_dict`：`id -> 价格`
+3. `shop_help`：`商品名 -> 详细帮助文本`
+4. `shop_brief_dict`：`id -> 商店列表中的一行简述`
 
-## 🥳 预览图
+随后在 `utils.py` 的 `Utils.gain_item()` 中增加 `elif id == ...` 分支。若商品需要交互（如转生苹果的二次确认），需在 `handles.py` 中单独处理 `yinpa_shop` 分支，并避免走 `gain_item` 的直接发货路径。
+
+### 扩展指令
+
+1. 在 `__init__.py` 中用 `on_command` / `on_message` 注册 matcher，设置 `priority` 与 `block`。
+2. 在 `handles.py` 的 `yinpa_Handles` 中实现处理器（签名通常为 `matcher, event, args`）。
+3. 如需多步交互，参考 `pending_join` / `pending_reincarnate` 的内存态缓存，并配合 `_join_pending_rule` / `_reincarnate_pending_rule` 注册高优先级 `on_message`。
+4. 同步更新 `dicts.yinpa_help_dict`、`help_aliases` 与本 README 的指令表。
+
+### 版本号
+
+发布前统一修改：
+
+- `pyproject.toml` 的 `version`
+- `nonebot_plugin_chikari_yinpa/__init__.py` 的 `__version__`
+- `dicts.py` 主帮助标题中的版本号
+- `CHANGELOG.md` 新增对应版本段落
+
+## 测试与检查
+
+仓库暂未提供自动化测试套件；提交前至少执行：
+
+```bash
+python -m compileall -q nonebot_plugin_chikari_yinpa
+```
+
+并手动回归以下路径：`/info`、`/shop`、`/work` 长文本、`/yinpa_join` 创建流程、转生苹果确认/取消/超时。
+
+## 贡献
+
+提交 Issue 或 PR 时遵循以下约定：
+
+- 一个 PR 只做一类改动，说明动机、行为变化与回归范围；
+- 涉及数值平衡时同步更新 `dicts.py` 帮助文本与本 README；
+- 新增配置项时同步更新 `config.py`、配置表与 `CHANGELOG.md`；
+- 不提交 `data/` 下的运行时数据或任何令牌/密钥。
+
+## 更新日志
+
+版本历史见 [CHANGELOG.md](./CHANGELOG.md)。
+
+## License
+
+[MIT](./LICENSE)
+
+## 预览
 
 （已过时）
 
